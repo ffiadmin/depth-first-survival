@@ -11,8 +11,8 @@ void TPCamera::resize(D3DXMATRIX &Proj, float FOV, float nearClip, float farClip
 
 void TPCamera::update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos)
 {
-	if(GetAsyncKeyState('L') & 0x8000)	theta -= 2.0f*dt;
-	if(GetAsyncKeyState('J') & 0x8000)	theta += 2.0f*dt;
+	if(GetAsyncKeyState('J') & 0x8000)	theta -= 2.0f*dt;
+	if(GetAsyncKeyState('L') & 0x8000)	theta += 2.0f*dt;
 	if(GetAsyncKeyState('I') & 0x8000)	phi -= 2.0f*dt;
 	if(GetAsyncKeyState('K') & 0x8000)	phi += 2.0f*dt;
 	if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
