@@ -182,7 +182,7 @@ void ColoredCubeApp::initApp()
 
 	origin.init(&line,&line2,&line3,mfxWVPVar,10);
 
-	testCube.init(&mBox,mfxWVPVar,mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds",2,Vector3(0,10,0),Vector3(0,0,0),0,Vector3(5,0.1,5));
+	testCube.init(&mBox,mfxWVPVar,mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds",2,Vector3(20,40,0),Vector3(0,0,0),0,Vector3(5,0.1,5));
 	flashLightObject.init(&flashLight,mfxWVPVar,mfxDiffuseMapVar,mfxSpecMapVar,L"butterflyeffect.jpg",L"defaultspec.dds",2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 
 	quad1.init(md3dDevice, 10, CYAN);
