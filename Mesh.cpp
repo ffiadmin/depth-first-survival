@@ -2,30 +2,40 @@
 
 Mesh::Mesh() : Geometry()
 {
-
+	numSlices = 0;
 }
 
 //make polygon is working.
 //does work for multiple
 //weird issue with culling I think that it only displays on one side need to fix that
 //something with the rotation?
-void Mesh::init(ID3D10Device* device, float scale)
+void Mesh::init(ID3D10Device* device, float scale, string meshFile)
 {
 	md3dDevice = device;
-	Vector3 line[4];
-	line[0] = Vector3(0,0,0);
-	line[1] = Vector3(0,1,0);
-	line[2] = Vector3(1,1,0);
-	line[3] = Vector3(1,0,0);
-	surfRev(20,line,4);
-	//makePolygon(line,4);
+	ifstream fin;
+	fin.open(meshFile);
+	
+	numSlices = 0;
+	fin >> numSlices;
+	int numPoints = 0;
+	fin >> numPoints;
+	Vector3* linePoints = new Vector3[numPoints];
+	for(int i = 0; i < numPoints; i++)
+	{
+		double x,y;
+		fin >> x;
+		//stop process if an x value is negative
+		if(x<0)
+		{
+			return;
+		}
+		fin >> y;
+		linePoints[i] = Vector3(x,y,0);
+	}
 
-	Vector3 line2[4];
-	line2[0] = Vector3(3,0,0);
-	line2[1] = Vector3(3,1,0);
-	line2[2] = Vector3(4,1,0);
-	line2[3] = Vector3(4,0,0);
-	//makePolygon(line2,4);
+	surfRev(numSlices,linePoints,numPoints);
+
+	delete[] linePoints;
 
 	Vertex* v = new Vertex[vertices.size()];
 	for(int i = 0; i < vertices.size(); i++)
@@ -76,6 +86,7 @@ void Mesh::surfRev(int numSlices, Vector3 linePoints[], int numPoints)
 {
 	float angleBetween = ToRadian(360 / numSlices);
 	Matrix rotate;
+	Identity(&rotate);
 	RotateY(&rotate,angleBetween);
 	Vector3* originalPoints = linePoints;
 	//arrays of the points for the caps if they are necessary
@@ -109,7 +120,12 @@ void Mesh::surfRev(int numSlices, Vector3 linePoints[], int numPoints)
 				side[2] = newPoints[0];
 			}
 			side[3] = newPoints[j];
-			makePolygon(side,4);
+			makePolygon(side,4,j);
+			//set the texture coordinates
+			vertices[vertices.size()-4].texC = Vector2((i*numSlices*(1/360)),0);
+			vertices[vertices.size()-3].texC = Vector2((i*numSlices*2*(1/360)),0);
+			vertices[vertices.size()-2].texC = Vector2((i*numSlices*2*(1/260)),1);
+			vertices[vertices.size()-1].texC = Vector2((i*numSlices*(1/360)),1);
 		}
 		originalPoints = newPoints;
 		//delete[] newPoints;
@@ -118,24 +134,24 @@ void Mesh::surfRev(int numSlices, Vector3 linePoints[], int numPoints)
 	//add end cap if necessary
 	if(linePoints[numPoints-1].x!=0)
 	{
-		makePolygon(topCap,numSlices);
+		makePolygon(topCap,numSlices,0);
 	}
 	if(linePoints[0].x!=0)
 	{
-		makePolygon(bottomCap,numSlices);
+		makePolygon(bottomCap,numSlices,0);
 	}
 	delete[] topCap;
 }
 
-void Mesh::makePolygon(Vector3 base[], int numPoints)
+void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 {
 	//triangulate the polygon
 	for(DWORD i = 1; i < numPoints-1; i++)
 	{
 		mNumFaces++;
-		indices.push_back(vertices.size());
+		indices.push_back(vertices.size() +i + 1);
 		indices.push_back(vertices.size() + i);
-		indices.push_back(vertices.size() + i+1);
+		indices.push_back(vertices.size());
 	}
 
 	//put in polygon base points
@@ -147,7 +163,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints)
 	v.pos = Vector3(base[0].x,base[0].y,base[0].z);
 	//have to calculate the normal for the first and last point slightly differently because they are the same point
 	Normalize(&v.normal,&norm);
-	v.texC = Vector2(0.0f, 1.0f);
+	v.texC = Vector2(0.0f,(sectionNumber*(360/numSlices)));
 	vertices.push_back(v);
 	mNumVertices++;
 
@@ -158,7 +174,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints)
 		edge2 = (base[i+1]-base[i]);
 		Cross(&norm,&edge1,&edge2);
 		Normalize(&v.normal,&norm);
-		v.texC = Vector2(0.0f, 1.0f);
+		v.texC = Vector2(1.0f,(sectionNumber*((360/(numSlices))*2)));
 		vertices.push_back(v);
 		mNumVertices++;
 	}
@@ -167,7 +183,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints)
 	edge2 = (base[0]-base[numPoints-1]);
 	Cross(&norm,&edge1,&edge2);
 	Normalize(&v.normal,&norm);
-	v.texC = Vector2(0.0f, 1.0f);
+	v.texC = Vector2(1.0f,(sectionNumber*(360/numSlices)));
 	vertices.push_back(v);
 	mNumVertices++;
 }

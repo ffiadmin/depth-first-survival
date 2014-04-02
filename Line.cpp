@@ -26,7 +26,7 @@ void Line::init(ID3D10Device* device, float scale, D3DXCOLOR c)
     };*/
 
 	vertices[0] = Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
-	vertices[1] = Vertex(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
+	vertices[1] = Vertex(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f);
 
 	// Scale the Line.
 	for(DWORD i = 0; i < mNumVertices; ++i)
