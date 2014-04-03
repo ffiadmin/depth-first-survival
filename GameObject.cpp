@@ -7,11 +7,26 @@ GameObject::GameObject()
 	active = true;
 	rotation = Vector3(0,0,0);
 	Identity(&world);
+	mfxDiffuseMapVar = 0;
+	mfxSpecMapVar = 0;
+	mDiffuseMapRV = 0;
+	mSpecMapRV = 0;
 }
 
 GameObject::~GameObject()
 {
 	geo = NULL;
+}
+
+void GameObject::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
+{
+	mfxDiffuseMapVar = diffuseLoc;
+	mfxSpecMapVar = specLoc;
+	HR(D3DX10CreateShaderResourceViewFromFile(geo->md3dDevice, 
+		diffuseMap, 0, 0, &mDiffuseMapRV, 0 ));
+
+	HR(D3DX10CreateShaderResourceViewFromFile(geo->md3dDevice, 
+		specMap, 0, 0, &mSpecMapRV, 0 ));
 }
 
 void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique)
@@ -22,8 +37,10 @@ void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
 	geo->md3dDevice->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//put these in the specific draws for the objects
-	mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
-	mfxSpecMapVar->SetResource(mSpecMapRV);
+	if(mfxDiffuseMapVar)
+		mfxDiffuseMapVar->SetResource(mDiffuseMapRV);
+	if(mfxSpecMapVar)
+		mfxSpecMapVar->SetResource(mSpecMapRV);
 
 	mWVP = getWorldMatrix()  *model*projection;
 	//sends world view matrix to the shader
@@ -41,16 +58,8 @@ void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
     }
 }
 
-void GameObject::init(Geometry *g, ID3D10EffectMatrixVariable* fx, ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap, float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
+void GameObject::init(Geometry *g, ID3D10EffectMatrixVariable* fx, float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
 {
-	mfxDiffuseMapVar = diffuseLoc;
-	mfxSpecMapVar = specLoc;
-	HR(D3DX10CreateShaderResourceViewFromFile(g->md3dDevice, 
-		diffuseMap, 0, 0, &mDiffuseMapRV, 0 ));
-
-	HR(D3DX10CreateShaderResourceViewFromFile(g->md3dDevice, 
-		specMap, 0, 0, &mSpecMapRV, 0 ));
-
 	mfxWVPVar = fx;
 	geo = g;
 	radius = r;

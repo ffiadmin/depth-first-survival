@@ -1,3 +1,5 @@
+
+
 #ifndef VERTEX_H
 #define VERTEX_H
 
@@ -6,12 +8,16 @@ struct Vertex
 	Vertex(){}
 	Vertex(float x, float y, float z, 
 		float nx, float ny, float nz, 
-		float u, float v)
-		: pos(x,y,z), normal(nx,ny,nz), texC(u,v){}
+		float u, float v, D3DXCOLOR d, D3DXCOLOR s)
+		: pos(x,y,z), normal(nx,ny,nz), texC(u,v), diffuse(d), spec(s){}
 
 	D3DXVECTOR3 pos;
 	D3DXVECTOR3 normal;
 	D3DXVECTOR2 texC;
+	D3DXCOLOR diffuse;
+	D3DXCOLOR spec;
+	D3DXCOLOR color;
 };
 
 #endif // VERTEX_H
+

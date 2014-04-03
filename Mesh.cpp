@@ -161,6 +161,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 	Vector3 norm;
 	Cross(&norm,&edge1,&edge2);
 	v.pos = Vector3(base[0].x,base[0].y,base[0].z);
+	v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
 	//have to calculate the normal for the first and last point slightly differently because they are the same point
 	Normalize(&v.normal,&norm);
 	v.texC = Vector2(0.0f,(sectionNumber*(360/numSlices)));
@@ -175,6 +176,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 		Cross(&norm,&edge1,&edge2);
 		Normalize(&v.normal,&norm);
 		v.texC = Vector2(1.0f,(sectionNumber*((360/(numSlices))*2)));
+		v.diffuse = D3DXCOLOR(0.0f,1.0f,0.0f,1.0f);
 		vertices.push_back(v);
 		mNumVertices++;
 	}
@@ -184,6 +186,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 	Cross(&norm,&edge1,&edge2);
 	Normalize(&v.normal,&norm);
 	v.texC = Vector2(1.0f,(sectionNumber*(360/numSlices)));
+	v.diffuse = D3DXCOLOR(0.0f,0.0f,1.0f,1.0f);
 	vertices.push_back(v);
 	mNumVertices++;
 }

@@ -15,6 +15,7 @@ struct Light
 	float3 att;
 	float  spotPower;
 	float  range;
+	int lightType;
 };
 
 struct SurfaceInfo
@@ -51,7 +52,6 @@ float3 ParallelLight(SurfaceInfo v, Light L, float3 eyePos)
 		litColor += diffuseFactor * v.diffuse * L.diffuse;
 		litColor += specFactor * v.spec * L.spec;
 	}
-	
 	return litColor;
 }
 

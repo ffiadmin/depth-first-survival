@@ -23,6 +23,8 @@ struct Light
 	D3DXCOLOR specular;
 	D3DXVECTOR3 att;
 	float spotPow;
+	float  range;
+	int lightType;
 };
 
 struct Material
