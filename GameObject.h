@@ -14,7 +14,7 @@ public:
 	GameObject();
 	~GameObject();
 
-	void init(Geometry *g, ID3D10EffectMatrixVariable* fx,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s);
+	void init(Geometry *g, ID3D10EffectMatrixVariable* fx,ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s);
 	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
 	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	void update(float dt);
@@ -55,6 +55,7 @@ private:
 	Vector3 scale;
 	ID3D10EffectTechnique* mTech;
 	ID3D10EffectMatrixVariable* mfxWVPVar;
+	ID3D10EffectMatrixVariable* mfxWorldVar;
 	D3DXMATRIX mWVP;
 
 	//variables to let geometry change their texture and such

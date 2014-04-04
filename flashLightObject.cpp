@@ -25,8 +25,8 @@ void FlashLightObject::update(float dt)
 	lightSource->spotPow = power;
 }
 
-void FlashLightObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx, float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
+void FlashLightObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx, ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
 {
 	flashLight.init(device,1,"flashLight.txt");
-	GameObject::init(&flashLight,fx,r,pos,vel,sp,s);
+	GameObject::init(&flashLight,fx,fx2,r,pos,vel,sp,s);
 }

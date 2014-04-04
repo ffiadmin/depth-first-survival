@@ -33,6 +33,7 @@
 #include "FPMovement.h"
 #include "TPMovement.h"
 #include "TPCamera.h"
+#include "EnemyObject.h"
 
 class ColoredCubeApp : public D3DApp
 {
@@ -53,20 +54,21 @@ private:
  
 private:
 	Audio* audio;
-	FPCamera playerCamera;
-	FPMovement playerCameraMovement;
+	TPCamera playerCamera;
+	TPMovement playerCameraMovement;
 	Light mParallelLight;
 	//Input* input;
 	float score;
 	Quad quad1;
 	Line line, line2, line3;
-	Box mBox, redBox, greenBox, shootBox;
+	Box mBox;
 
 	SoundItem* testSound;
 
 	GameObject testCube;
 	GameObject floor,wall1,wall2,wall3,wall4;
 	FlashLight flashLight;
+	EnemyObject enemy;
 	Mesh testMesh;
 	FlashLightObject flashLightObject;
 	BatteryObject batteryObject;
@@ -74,6 +76,7 @@ private:
 	Origin origin;
 
 	float spinAmount;
+	int prevLightType;//used for switching light types
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
@@ -152,6 +155,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
   mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5), mEyePos(0.0f, 0.0f, 0.0f)
 {
+	prevLightType = 0;
 	mTechColor = 0;
 	mFXColor = 0;
 	mfxWVPVarColor = 0;
@@ -178,25 +182,29 @@ ColoredCubeApp::~ColoredCubeApp()
 void ColoredCubeApp::initApp()
 {
 	D3DApp::initApp();
-	
-	mParallelLight.ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	//0: Parallel
+	//1: Point
+	//2: Spot
+
+	mParallelLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	mParallelLight.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	mParallelLight.att.x    = 1.0f;
 	mParallelLight.att.y    = 0.0f;
 	mParallelLight.att.z    = 0.0f;
-	mParallelLight.spotPow  = 256.0f;
-	mParallelLight.range    = 100000.0f;
-	mParallelLight.pos = D3DXVECTOR3(0,1000,0);
-	mParallelLight.lightType = 0;
+	mParallelLight.spotPow  = 1;
+	mParallelLight.range    = 50;
+	mParallelLight.pos = D3DXVECTOR3(0,5,0);
+	mParallelLight.dir = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
+	//mParallelLight.att = Vector3(10,10,10);
+	
+	mParallelLight.lightType = 1;
+	prevLightType = mParallelLight.lightType;
 
 	buildFX();
 	buildVertexLayouts();
 
 	mBox.init(md3dDevice, 1.0f);
-	redBox.init(md3dDevice, 1.0f);
-	greenBox.init(md3dDevice, 1.0f);
-	shootBox.init(md3dDevice, 1.0f);
 
 	flashLight.init(md3dDevice,D3DXCOLOR(1,1,1,1));
 	testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
@@ -208,17 +216,25 @@ void ColoredCubeApp::initApp()
 	origin.init(&line,&line2,&line3,mfxWVPVar,10);
 
 	//make the texture init in another function so it is not an issue switching between shaders
-	floor.init(&mBox,mfxWVPVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
+	floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
+	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+
+	wall1.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(-20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
+	wall2.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
+	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
+	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
 
-	wall1.init(&mBox,mfxWVPVar,2,Vector3(-20,-3,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
-
-	testCube.init(&mBox,mfxWVPVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
 
-	flashLightObject.init(md3dDevice,mfxWVPVarColor,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	flashLightObject.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(0,0,ToRadian(90)));
-	batteryObject.init(md3dDevice,mfxWVPVarColor,2,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+
+	batteryObject.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	enemy.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
+	
+	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 
 	quad1.init(md3dDevice, 10, CYAN);
 	quad1.setPosition(Vector3(0,0,0));
@@ -261,7 +277,7 @@ void ColoredCubeApp::onResize()
 void ColoredCubeApp::updateScene(float dt)
 {
 	timer -= dt;
-    std::wostringstream outs;   
+    std::wostringstream outs; 
 	//update the camera
 	playerCamera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos);
 	//move the player
@@ -271,11 +287,19 @@ void ColoredCubeApp::updateScene(float dt)
 	//flashLightObject.setVelocity(moveCube());
 	//batteryObject.setVelocity(moveCube());
 	testCube.update(dt);
-	flashLightObject.setPosition(Vector3(testCube.getPosition().x,testCube.getPosition().y,testCube.getPosition().z));
 	flashLightObject.update(dt);
 	batteryObject.update(dt);
+	enemy.update(dt,&testCube);
 	quad1.update(dt);
 	floor.update(dt);
+	wall1.update(dt);
+	wall2.update(dt);
+	wall3.update(dt);
+	wall4.update(dt);
+
+	//mParallelLight.pos = testCube.getPosition();
+	//set up the flashlight light direction based on the direction the geometry is pointing
+	//D3DXVec3Normalize(&mParallelLight.dir, &(playerCamera.getTarget()-testCube.getPosition()));
 
 	outs.precision(2);
     outs << L"Time: " << timer << L"\n";
@@ -296,12 +320,24 @@ void ColoredCubeApp::drawScene()
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
     md3dDevice->IASetInputLayout(mVertexLayout);
 
+	mfxEyePosVar->SetRawValue(&testCube.getPosition(), 0, sizeof(D3DXVECTOR3));
+	mfxEyePosVarColor->SetRawValue(&testCube.getPosition(), 0, sizeof(D3DXVECTOR3));
+
 	// set constants
-	//mfxEyePosVar->SetRawValue(&mEyePos, 0, sizeof(D3DXVECTOR3));
 	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
+	if(testCube.collided(&enemy))
+	{
+		if(mParallelLight.lightType<3)
+			prevLightType = mParallelLight.lightType;
+		mParallelLight.lightType = 3;
+	}
+	else
+	{
+		mParallelLight.lightType = prevLightType;
+	}
+	
+	//mParallelLight.lightType = 2;
 	mfxLightVarColor->SetRawValue(&mParallelLight, 0, sizeof(Light));
-	//sets up stuff for the lighting?
-	//mfxWorldVar->SetMatrix((float*)&mCrateWorld);
  
 	// Don't transform texture coordinates, so just use identity transformation.
 	D3DXMATRIX texMtx;
@@ -316,11 +352,18 @@ void ColoredCubeApp::drawScene()
 	origin.draw(mView, mProj, mTech);
      
 	testCube.draw(mView, mProj, mTech);
+	
 	flashLightObject.draw(mView,mProj,mTechColor);
 	
 	batteryObject.draw(mView,mProj,mTechColor);
 	
+	enemy.draw(mView,mProj,mTechColor);
+
 	floor.draw(mView, mProj, mTech);
+	wall1.draw(mView, mProj, mTech);
+	wall2.draw(mView, mProj, mTech);
+	wall3.draw(mView, mProj, mTech);
+	wall4.draw(mView, mProj, mTech);
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};

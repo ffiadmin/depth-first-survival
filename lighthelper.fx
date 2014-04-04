@@ -32,14 +32,15 @@ float3 ParallelLight(SurfaceInfo v, Light L, float3 eyePos)
  
 	// The light vector aims opposite the direction the light rays travel.
 	float3 lightVec = -L.dir;
-	
+
 	// Add the ambient term.
 	litColor += v.diffuse * L.ambient;	
-	
+
 	// Add diffuse and specular term, provided the surface is in 
 	// the line of site of the light.
 	
 	float diffuseFactor = dot(lightVec, v.normal);
+
 	[branch]
 	if( diffuseFactor > 0.0f )
 	{
@@ -52,6 +53,7 @@ float3 ParallelLight(SurfaceInfo v, Light L, float3 eyePos)
 		litColor += diffuseFactor * v.diffuse * L.diffuse;
 		litColor += specFactor * v.spec * L.spec;
 	}
+
 	return litColor;
 }
 
@@ -73,7 +75,7 @@ float3 PointLight(SurfaceInfo v, Light L, float3 eyePos)
 	
 	// Add the ambient light term.
 	litColor += v.diffuse * L.ambient;	
-	
+
 	// Add diffuse and specular term, provided the surface is in 
 	// the line of site of the light.
 	
@@ -103,7 +105,7 @@ float3 Spotlight(SurfaceInfo v, Light L, float3 eyePos)
 	float3 lightVec = normalize(L.pos - v.pos);
 	
 	float s = pow(max(dot(-lightVec, L.dir), 0.0f), L.spotPower);
-	
+
 	// Scale color by spotlight factor.
 	return litColor*s;
 }

@@ -62,7 +62,7 @@ float4 PS(VS_OUT pIn) : SV_Target
     pIn.normalW = normalize(pIn.normalW);
    
    
-    SurfaceInfo v = {pIn.posW, pIn.normalW, pIn.diffuse, pIn.spec};
+    SurfaceInfo v = {pIn.posW, pIn.normalW, pIn.diffuse/10, pIn.spec/10};
     
     float3 litColor;
     if( gLight.lightType == 0 ) // Parallel
@@ -77,7 +77,7 @@ float4 PS(VS_OUT pIn) : SV_Target
 	{
 		litColor = Spotlight(v, gLight, gEyePosW);
 	}
-	   
+	
     return float4(litColor, pIn.diffuse.a);
 }
 

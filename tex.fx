@@ -77,6 +77,8 @@ float4 PS(VS_OUT pIn) : SV_Target
 	float4 diffuseTexel = gDiffuseMap.Sample( gTriLinearSam, pIn.texC );
 	float4 specTexel    = gSpecMap.Sample( gTriLinearSam, pIn.texC );
 
+	diffuseTexel/=10;
+	specTexel/=10;
 	//diffuse+=pIn.diffuse;
 	//spec+=pIn.spec;
 
@@ -102,7 +104,7 @@ float4 PS(VS_OUT pIn) : SV_Target
 	{
 		litColor = Spotlight(v, gLight, gEyePosW);
 	}
- //   litColor+=diffuseTexel;
+    //litColor+=diffuseTexel;
 	//litColor+=specTexel;
     return float4(litColor, pIn.diffuse.a);
 }

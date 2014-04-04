@@ -22,9 +22,11 @@ public :
 	void setHeightAndWidth(int wH, int wW) { windowHeight = wH; windowWidth = wW;}
 	//Call this in update
 	void update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos);
+	Vector3 getTarget() {return target;}
 
 private : 
 	int windowHeight;
 	int windowWidth;
+	Vector3 target;
 };
 

@@ -46,6 +46,9 @@ void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
 	//sends world view matrix to the shader
 	//handle to matrix variable in the shader
 	mfxWVPVar->SetMatrix((float*)&mWVP);
+	//set the world matrix
+	mfxWorldVar->SetMatrix((float*)&world);
+
 	//sets the technique
 	setMTech(technique);
 	
@@ -58,9 +61,10 @@ void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
     }
 }
 
-void GameObject::init(Geometry *g, ID3D10EffectMatrixVariable* fx, float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
+void GameObject::init(Geometry *g, ID3D10EffectMatrixVariable* fx, ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
 {
 	mfxWVPVar = fx;
+	mfxWorldVar = fx2;
 	geo = g;
 	radius = r;
 	radius *= 1.01; //fudge factor

@@ -36,7 +36,7 @@ void FPCamera::update(float &theta, float &phi, float &radius, float headPos, fl
 	eyePos.y =  player.getPosition().y + headPos;
 
 	// Build the view matrix.
-	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+	target = Vector3(0.0f, 0.0f, 0.0f);
 	target.x = radius*sinf(phi)*sinf(theta);
 	target.y = radius*cosf(phi);
 	target.z = -radius*sinf(phi)*cosf(theta);
