@@ -25,6 +25,7 @@ struct Light
 	float spotPow;
 	float  range;
 	int lightType;
+	float pad3,pad4,pad5;
 };
 
 struct Material

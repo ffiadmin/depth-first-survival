@@ -4,13 +4,7 @@
 #include "constants.h"
 
 Quad::Quad()
-: mNumVertices(0), mNumFaces(0), md3dDevice(0), mVB(0), mIB(0)
-{
-	rotX = 0;
-	rotY = 0;
-	rotZ = 0;
-	Identity(&world);
-}
+{}
  
 Quad::~Quad()
 {
@@ -27,14 +21,15 @@ void Quad::init(ID3D10Device* device, float scale, D3DXCOLOR c)
 	// Create vertex buffer
 
 	 Vertex vertices[4];
-	vertices[0] = Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,D3DXCOLOR(1,1,1,1),D3DXCOLOR(1,1,1,1));
-	vertices[1] = Vertex(-1.0f,  1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,D3DXCOLOR(1,1,1,1),D3DXCOLOR(1,1,1,1));
-	vertices[2] = Vertex( 1.0f,  1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,D3DXCOLOR(1,1,1,1),D3DXCOLOR(1,1,1,1));
-	vertices[3] = Vertex( 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,D3DXCOLOR(1,1,1,1),D3DXCOLOR(1,1,1,1));
+	vertices[0] = Vertex(-1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,c,c);
+	vertices[1] = Vertex(-1.0f,  1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,c,c);
+	vertices[2] = Vertex( 1.0f,  1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,c,c);
+	vertices[3] = Vertex( 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,c,c);
 
 	// Scale the Quad.
 	for(DWORD i = 0; i < mNumVertices; ++i)
 		vertices[i].pos *= scale;
+
     D3D10_BUFFER_DESC vbd;
     vbd.Usage = D3D10_USAGE_IMMUTABLE;
     vbd.ByteWidth = sizeof(Vertex) * mNumVertices;
@@ -55,23 +50,13 @@ void Quad::init(ID3D10Device* device, float scale, D3DXCOLOR c)
 
 	D3D10_BUFFER_DESC ibd;
     ibd.Usage = D3D10_USAGE_IMMUTABLE;
-    ibd.ByteWidth = sizeof(DWORD) * mNumFaces*3;
+	ibd.ByteWidth = sizeof(DWORD) * mNumFaces*3;
     ibd.BindFlags = D3D10_BIND_INDEX_BUFFER;
     ibd.CPUAccessFlags = 0;
     ibd.MiscFlags = 0;
     D3D10_SUBRESOURCE_DATA iinitData;
     iinitData.pSysMem = indices;
     HR(md3dDevice->CreateBuffer(&ibd, &iinitData, &mIB));
-}
-
-void Quad::update(float dt)
-{
-	Matrix rotXM, rotYM, rotZM, transM;
-	RotateX(&rotXM, rotX);
-	RotateY(&rotYM, rotY);
-	RotateZ(&rotZM, rotZ); 
-	Translate(&transM, position.x, position.y, position.z);
-	world = rotXM * rotYM * rotZM * transM;
 }
 
 void Quad::draw()

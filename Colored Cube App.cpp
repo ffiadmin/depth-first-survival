@@ -14,7 +14,6 @@
 
 #include "d3dApp.h"
 #include "Box.h"
-#include "flashLight.h"
 #include "GameObject.h"
 #include "flashLightObject.h"
 #include "BatteryObject.h"
@@ -54,9 +53,9 @@ private:
  
 private:
 	Audio* audio;
-	TPCamera playerCamera;
-	TPMovement playerCameraMovement;
-	Light mParallelLight;
+	FPCamera playerCamera;
+	FPMovement playerCameraMovement;
+	Light lights[4];
 	//Input* input;
 	float score;
 	Quad quad1;
@@ -67,7 +66,6 @@ private:
 
 	GameObject testCube;
 	GameObject floor,wall1,wall2,wall3,wall4;
-	FlashLight flashLight;
 	EnemyObject enemy;
 	Mesh testMesh;
 	FlashLightObject flashLightObject;
@@ -77,27 +75,25 @@ private:
 
 	float spinAmount;
 	int prevLightType;//used for switching light types
+	int numLights;
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
 	ID3D10EffectTechnique* mTech;
-	ID3D10EffectTechnique* mTechColor;
+	ID3D10EffectTechnique* mTechColor2;
 	ID3D10InputLayout* mVertexLayout;
 	ID3D10EffectMatrixVariable* mfxWVPVar;
-	ID3D10EffectMatrixVariable* mfxWVPVarColor;
 	//my addition
 	//the location of variable in the shader program like in openGL
 	ID3D10EffectVariable* mfxFLIPVar;
 
 	ID3D10EffectMatrixVariable* mfxWorldVar;
-	ID3D10EffectMatrixVariable* mfxWorldVarColor;
 	ID3D10EffectVariable* mfxEyePosVar;
-	ID3D10EffectVariable* mfxEyePosVarColor;
 	ID3D10EffectVariable* mfxLightVar;
-	ID3D10EffectVariable* mfxLightVarColor;
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
+	ID3D10EffectScalarVariable* mfxNumLights;
 
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
@@ -153,12 +149,10 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5), mEyePos(0.0f, 0.0f, 0.0f)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(100), mEyePos(0.0f, 0.0f, 0.0f)
 {
+	numLights=4;
 	prevLightType = 0;
-	mTechColor = 0;
-	mFXColor = 0;
-	mfxWVPVarColor = 0;
 	score = 0;
 	timer = 30;
 	D3DXMatrixIdentity(&mView);
@@ -186,27 +180,38 @@ void ColoredCubeApp::initApp()
 	//1: Point
 	//2: Spot
 
-	mParallelLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	mParallelLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	mParallelLight.specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	mParallelLight.att.x    = 1.0f;
-	mParallelLight.att.y    = 0.0f;
-	mParallelLight.att.z    = 0.0f;
-	mParallelLight.spotPow  = 1;
-	mParallelLight.range    = 50;
-	mParallelLight.pos = D3DXVECTOR3(0,5,0);
-	mParallelLight.dir = D3DXVECTOR3(0.57735f, -0.57735f, 0.57735f);
-	//mParallelLight.att = Vector3(10,10,10);
-	
-	mParallelLight.lightType = 1;
-	prevLightType = mParallelLight.lightType;
+	lights[0].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	lights[0].diffuse  = D3DXCOLOR(1.0f, 0.3f, 0.3f, 1.0f);
+	lights[0].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	lights[0].att.x    = 1.0f;
+	lights[0].att.y    = 0.0f;
+	lights[0].att.z    = 0.0f;
+	lights[0].spotPow  = 10;
+	lights[0].range    = 100;
+	lights[0].pos = D3DXVECTOR3(10,20,10);
+	lights[0].dir = D3DXVECTOR3(0, -1, 0);	
+	lights[0].lightType = 2;
+	prevLightType = lights[0].lightType;
+
+	lights[1].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	lights[1].diffuse  = D3DXCOLOR(0.0f, 1.0f, 0.3f, 1.0f);
+	lights[1].specular = D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f);
+	lights[1].att.x    = 1.0f;
+	lights[1].att.y    = 0.0f;
+	lights[1].att.z    = 0.0f;
+	lights[1].spotPow  = 20;
+	lights[1].range    = 100;
+	lights[1].pos = D3DXVECTOR3(-10,20,-10);
+	lights[1].dir = D3DXVECTOR3(0, -1, 0);	
+	lights[1].lightType = 2;
+
+	numLights = 2;
 
 	buildFX();
 	buildVertexLayouts();
 
 	mBox.init(md3dDevice, 1.0f);
 
-	flashLight.init(md3dDevice,D3DXCOLOR(1,1,1,1));
 	testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
 
 	line.init(md3dDevice, 1.0f, DARKBROWN);
@@ -214,6 +219,8 @@ void ColoredCubeApp::initApp()
 	line3.init(md3dDevice, 1.0f, GREEN);
 
 	origin.init(&line,&line2,&line3,mfxWVPVar,10);
+
+	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
 	//make the texture init in another function so it is not an issue switching between shaders
 	floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
@@ -223,24 +230,17 @@ void ColoredCubeApp::initApp()
 	wall2.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
 	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));
-	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
 
-	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
 
-	flashLightObject.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	flashLightObject.setRotation(Vector3(0,0,ToRadian(90)));
+	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
-	batteryObject.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	enemy.init(md3dDevice,mfxWVPVarColor,mfxWorldVarColor,2,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
+	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	enemy.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
-
-	quad1.init(md3dDevice, 10, CYAN);
-	quad1.setPosition(Vector3(0,0,0));
-
-	spinAmount = 0;
-
 	// init sound system
     audio = new Audio();
     if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
@@ -287,16 +287,24 @@ void ColoredCubeApp::updateScene(float dt)
 	//flashLightObject.setVelocity(moveCube());
 	//batteryObject.setVelocity(moveCube());
 	testCube.update(dt);
+	flashLightObject.lightSource.dir = playerCamera.getTarget();
+	flashLightObject.setPosition(testCube.getPosition());//add code to make the flashlight visible
+	//flashLightObject.setPosition(testCube.getPosition());
 	flashLightObject.update(dt);
 	batteryObject.update(dt);
 	enemy.update(dt,&testCube);
-	quad1.update(dt);
 	floor.update(dt);
 	wall1.update(dt);
 	wall2.update(dt);
 	wall3.update(dt);
 	wall4.update(dt);
 
+	//flashLightObject.setRotation(
+
+	if(testCube.collided(&batteryObject))
+	{
+		flashLightObject.getBattery();
+	}
 	//mParallelLight.pos = testCube.getPosition();
 	//set up the flashlight light direction based on the direction the geometry is pointing
 	//D3DXVec3Normalize(&mParallelLight.dir, &(playerCamera.getTarget()-testCube.getPosition()));
@@ -321,23 +329,23 @@ void ColoredCubeApp::drawScene()
     md3dDevice->IASetInputLayout(mVertexLayout);
 
 	mfxEyePosVar->SetRawValue(&testCube.getPosition(), 0, sizeof(D3DXVECTOR3));
-	mfxEyePosVarColor->SetRawValue(&testCube.getPosition(), 0, sizeof(D3DXVECTOR3));
 
-	// set constants
-	mfxLightVar->SetRawValue(&mParallelLight, 0, sizeof(Light));
-	if(testCube.collided(&enemy))
+	//set the number of lights to use
+	mfxNumLights->SetInt(numLights);
+
+	// set the light array
+	lights[0] = flashLightObject.lightSource;
+	/*if(testCube.collided(&enemy))
 	{
-		if(mParallelLight.lightType<3)
-			prevLightType = mParallelLight.lightType;
-		mParallelLight.lightType = 3;
+		if(lights[0].lightType<3)
+			prevLightType = lights[0].lightType;
+		lights[0].lightType = 3;
 	}
 	else
 	{
-		mParallelLight.lightType = prevLightType;
-	}
-	
-	//mParallelLight.lightType = 2;
-	mfxLightVarColor->SetRawValue(&mParallelLight, 0, sizeof(Light));
+		lights[0].lightType = prevLightType;
+	}*/
+	mfxLightVar->SetRawValue(&lights[0], 0, sizeof(Light));
  
 	// Don't transform texture coordinates, so just use identity transformation.
 	D3DXMATRIX texMtx;
@@ -351,13 +359,13 @@ void ColoredCubeApp::drawScene()
 	//draw the origin
 	origin.draw(mView, mProj, mTech);
      
-	testCube.draw(mView, mProj, mTech);
+	//testCube.draw(mView, mProj, mTech);
 	
-	flashLightObject.draw(mView,mProj,mTechColor);
+	flashLightObject.draw(mView,mProj,mTechColor2);
 	
-	batteryObject.draw(mView,mProj,mTechColor);
+	batteryObject.draw(mView,mProj,mTechColor2);
 	
-	enemy.draw(mView,mProj,mTechColor);
+	enemy.draw(mView,mProj,mTechColor2);
 
 	floor.draw(mView, mProj, mTech);
 	wall1.draw(mView, mProj, mTech);
@@ -391,22 +399,11 @@ void ColoredCubeApp::buildFX()
 			ReleaseCOM(compilationErrors);
 		}
 		DXTrace(__FILE__, (DWORD)__LINE__, hr, L"D3DX10CreateEffectFromFile", true);
-	} 
-
-	hr = D3DX10CreateEffectFromFile(L"lighting.fx", 0, 0, 
-		"fx_4_0", shaderFlags, 0, md3dDevice, 0, 0, &mFXColor, &compilationErrors, 0);
-	if(FAILED(hr))
-	{
-		if( compilationErrors )
-		{
-			MessageBoxA(0, (char*)compilationErrors->GetBufferPointer(), 0, 0);
-			ReleaseCOM(compilationErrors);
-		}
-		DXTrace(__FILE__, (DWORD)__LINE__, hr, L"D3DX10CreateEffectFromFile", true);
-	} 
+	}  
 
 	mTech = mFX->GetTechniqueByName("TexTech");
-	mTechColor = mFXColor->GetTechniqueByName("LightTech");
+	mTechColor2 = mFX->GetTechniqueByName("ColorTech");
+	//mTechStatic = mFX->GetTechniqueByName("StaticTech");
 
 	mfxWVPVar        = mFX->GetVariableByName("gWVP")->AsMatrix();
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
@@ -415,11 +412,7 @@ void ColoredCubeApp::buildFX()
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();
-
-	mfxWVPVarColor	 = mFXColor->GetVariableByName("gWVP")->AsMatrix();
-	mfxWorldVarColor = mFXColor->GetVariableByName("gWorld")->AsMatrix();
-	mfxEyePosVarColor= mFXColor->GetVariableByName("gEyePosW");
-	mfxLightVarColor = mFXColor->GetVariableByName("gLight");
+	mfxNumLights	 = mFX->GetVariableByName("gNumLights")->AsScalar();
 }
 
 void ColoredCubeApp::buildVertexLayouts()

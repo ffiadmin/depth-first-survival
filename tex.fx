@@ -10,8 +10,9 @@
  
 cbuffer cbPerFrame
 {
-	Light gLight;
+	Light gLight[100];
 	float3 gEyePosW;
+	int gNumLights;
 };
 
 bool gSpecularEnabled;
@@ -77,8 +78,8 @@ float4 PS(VS_OUT pIn) : SV_Target
 	float4 diffuseTexel = gDiffuseMap.Sample( gTriLinearSam, pIn.texC );
 	float4 specTexel    = gSpecMap.Sample( gTriLinearSam, pIn.texC );
 
-	diffuseTexel/=10;
-	specTexel/=10;
+	diffuseTexel;
+	specTexel;
 	//diffuse+=pIn.diffuse;
 	//spec+=pIn.spec;
 
@@ -89,23 +90,55 @@ float4 PS(VS_OUT pIn) : SV_Target
     float3 normalW = normalize(pIn.normalW);
     
 	// Compute the lit color for this pixel.
-    SurfaceInfo v = {pIn.posW, normalW, diffuseTexel, specTexel};// pIn.diffuse, pIn.spec};
-	float3 litColor;
-	//litColor = ParallelLight(v, gLight, gEyePosW);
-	if(gLight.lightType == 0)
+    
+	float3 litColor = float3(0,0,0);
+	
+	for(uint i = 0; i < 2; i++)
 	{
-		litColor = ParallelLight(v, gLight, gEyePosW);
+		SurfaceInfo v = {pIn.posW, normalW, diffuseTexel, specTexel};
+		if(gLight[i].lightType == 0)
+		{
+			litColor += ParallelLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType == 1)
+		{
+			litColor += PointLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType == 2)
+		{
+			litColor += Spotlight(v, gLight[i], gEyePosW);
+		}
 	}
-	else if(gLight.lightType == 1)
+
+    return float4(litColor, pIn.diffuse.a);
+}
+
+float4 PSColor(VS_OUT pIn) : SV_Target
+{
+	// Interpolating normal can make it not be of unit length so normalize it.
+    pIn.normalW = normalize(pIn.normalW);
+   
+   
+    SurfaceInfo v = {pIn.posW, pIn.normalW, pIn.diffuse/10, pIn.spec/10};
+    
+    float3 litColor = float3(0,0,0);
+	
+	for(uint i = 0; i < gNumLights; i++)
 	{
-		litColor = PointLight(v, gLight, gEyePosW);
+		if(gLight[i].lightType == 0)
+		{
+			litColor += ParallelLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType == 1)
+		{
+			litColor += PointLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType == 2)
+		{
+			litColor += Spotlight(v, gLight[i], gEyePosW);
+		}
 	}
-	else if(gLight.lightType == 2)
-	{
-		litColor = Spotlight(v, gLight, gEyePosW);
-	}
-    //litColor+=diffuseTexel;
-	//litColor+=specTexel;
+	
     return float4(litColor, pIn.diffuse.a);
 }
 
@@ -117,4 +150,14 @@ technique10 TexTech
         SetGeometryShader( NULL );
         SetPixelShader( CompileShader( ps_4_0, PS() ) );
     }
+}
+
+technique10 ColorTech
+{
+	pass P1
+	{
+		SetVertexShader( CompileShader( vs_4_0, VS() ) );
+        SetGeometryShader( NULL );
+        SetPixelShader( CompileShader( ps_4_0, PSColor() ) );
+	}
 }
