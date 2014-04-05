@@ -33,10 +33,11 @@ void TPCamera::update(float &theta, float &phi, float &radius, float headPos, fl
 	eyePos.y =  radius*cosf(phi) + player.getPosition().y;
 
 	// Build the view matrix.
-	D3DXVECTOR3 target(0.0f, 0.0f, 0.0f);
+	target = Vector3(0.0f, 0.0f, 0.0f);
 	target.x = player.getPosition().x;
 	target.y = player.getPosition().y;
 	target.z = player.getPosition().z;
 	D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 	D3DXMatrixLookAtLH(&view, &eyePos, &target, &up);
+	Normalize(&target,&target);
 }

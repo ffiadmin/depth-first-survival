@@ -36,6 +36,10 @@ const UINT GAME_HEIGHT = 600;               // height of game in pixels
 #define Normalize D3DXVec3Normalize
 #define VectorZero Vector3(0,0,0)
 #define Cross D3DXVec3Cross
+#define Dot D3DXVec3Dot
+#define Length D3DXVec3Length
+#define Dot2 D3DXVec2Dot
+#define Length2 D3DXVec2Length
 
 //audio stuff
 //C:\Users\GEARHARTJJ1\Documents\College\Junior year\Spring\Games 2\Game Jam 1 Gearhart Young

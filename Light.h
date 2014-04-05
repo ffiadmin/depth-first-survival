@@ -21,10 +21,10 @@ struct Light
 	D3DXCOLOR ambient;
 	D3DXCOLOR diffuse;
 	D3DXCOLOR specular;
+	D3DXVECTOR4 lightType;
 	D3DXVECTOR3 att;
 	float spotPow;
 	float  range;
-	int lightType;
 	float pad3,pad4,pad5;
 };
 

@@ -12,6 +12,7 @@
 //update world matrix of where to draw
 //multiple world matrix tell it to draw
 
+#include <math.h>
 #include "d3dApp.h"
 #include "Box.h"
 #include "GameObject.h"
@@ -33,6 +34,7 @@
 #include "TPMovement.h"
 #include "TPCamera.h"
 #include "EnemyObject.h"
+#include "LightObject.h"
 
 class ColoredCubeApp : public D3DApp
 {
@@ -56,6 +58,7 @@ private:
 	FPCamera playerCamera;
 	FPMovement playerCameraMovement;
 	Light lights[4];
+	LightObject lightObject1;
 	//Input* input;
 	float score;
 	Quad quad1;
@@ -149,7 +152,7 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(100), mEyePos(0.0f, 0.0f, 0.0f)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(50), mEyePos(0.0f, 0.0f, 0.0f)
 {
 	numLights=4;
 	prevLightType = 0;
@@ -190,12 +193,13 @@ void ColoredCubeApp::initApp()
 	lights[0].range    = 100;
 	lights[0].pos = D3DXVECTOR3(10,20,10);
 	lights[0].dir = D3DXVECTOR3(0, -1, 0);	
-	lights[0].lightType = 2;
-	prevLightType = lights[0].lightType;
+	lights[0].lightType.x = 2;
+	prevLightType = lights[0].lightType.x;
 
-	lights[1].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	lights[1].diffuse  = D3DXCOLOR(0.0f, 1.0f, 0.3f, 1.0f);
-	lights[1].specular = D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f);
+	lights[1].ambient  = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
+	//lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
+	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[1].att.x    = 1.0f;
 	lights[1].att.y    = 0.0f;
 	lights[1].att.z    = 0.0f;
@@ -203,9 +207,9 @@ void ColoredCubeApp::initApp()
 	lights[1].range    = 100;
 	lights[1].pos = D3DXVECTOR3(-10,20,-10);
 	lights[1].dir = D3DXVECTOR3(0, -1, 0);	
-	lights[1].lightType = 2;
+	lights[1].lightType.x = 0;
 
-	numLights = 2;
+	numLights = 3;
 
 	buildFX();
 	buildVertexLayouts();
@@ -236,6 +240,9 @@ void ColoredCubeApp::initApp()
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
+
+	lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
 
 	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	enemy.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
@@ -282,17 +289,60 @@ void ColoredCubeApp::updateScene(float dt)
 	playerCamera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos);
 	//move the player
 	playerCameraMovement.movePlayer(testCube,10,mTheta);
-	//mParallelLight.pos = mEyePos;
-	//testCube.setVelocity(moveCube());
-	//flashLightObject.setVelocity(moveCube());
-	//batteryObject.setVelocity(moveCube());
+
 	testCube.update(dt);
-	flashLightObject.lightSource.dir = playerCamera.getTarget();
-	flashLightObject.setPosition(testCube.getPosition());//add code to make the flashlight visible
-	//flashLightObject.setPosition(testCube.getPosition());
+	//flashLightObject.lightSource.dir = playerCamera.getTarget();
+	if(flashLightObject.getPosition()!=testCube.getPosition())
+		flashLightObject.setPosition(testCube.getPosition());//add code to make the flashlight visible
+
+	//orientating the flashlight
+	if(flashLightObject.lightSource.dir!=playerCamera.getTarget())
+	{
+		//vectors for caluclating z-rotation
+		Vector2 cameraXY = Vector2(playerCamera.getTarget().x,playerCamera.getTarget().y);
+		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
+		//vectors for calculating y-rotation
+		Vector2 cameraXZ = Vector2(playerCamera.getTarget().x,playerCamera.getTarget().z);
+		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
+		//vectors for calculating x-rotation
+		Vector2 cameraYZ = Vector2(playerCamera.getTarget().y,playerCamera.getTarget().z);
+		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
+
+		float xAngle = flashLightObject.getRotation().x;
+		float yAngle = flashLightObject.getRotation().y;
+		float zAngle = flashLightObject.getRotation().z;
+		float topEquation;
+		float bottomEquation;
+
+		topEquation = Dot2(&cameraXY,&startXY);
+		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
+		if(bottomEquation>0)
+		{
+			zAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraXZ,&startXZ);
+		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
+		if(bottomEquation>0)
+		{
+			yAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraYZ,&startYZ);
+		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
+		if(bottomEquation>0)
+		{
+			xAngle+=acos((topEquation/bottomEquation));
+		}
+
+		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
+		flashLightObject.lightSource.dir = playerCamera.getTarget();
+	}
+
 	flashLightObject.update(dt);
 	batteryObject.update(dt);
 	enemy.update(dt,&testCube);
+	lightObject1.update(dt);
 	floor.update(dt);
 	wall1.update(dt);
 	wall2.update(dt);
@@ -335,6 +385,7 @@ void ColoredCubeApp::drawScene()
 
 	// set the light array
 	lights[0] = flashLightObject.lightSource;
+	lights[2] = lightObject1.getLight();
 	/*if(testCube.collided(&enemy))
 	{
 		if(lights[0].lightType<3)
@@ -345,7 +396,7 @@ void ColoredCubeApp::drawScene()
 	{
 		lights[0].lightType = prevLightType;
 	}*/
-	mfxLightVar->SetRawValue(&lights[0], 0, sizeof(Light));
+	mfxLightVar->SetRawValue(&lights[0], 0, numLights*sizeof(Light));
  
 	// Don't transform texture coordinates, so just use identity transformation.
 	D3DXMATRIX texMtx;
@@ -372,6 +423,7 @@ void ColoredCubeApp::drawScene()
 	wall2.draw(mView, mProj, mTech);
 	wall3.draw(mView, mProj, mTech);
 	wall4.draw(mView, mProj, mTech);
+	lightObject1.draw(mView,mProj,mTech);
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};

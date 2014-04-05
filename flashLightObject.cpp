@@ -16,8 +16,11 @@ FlashLightObject::FlashLightObject()
 	lightSource.range    = 100;
 	lightSource.pos = D3DXVECTOR3(10,20,10);
 	lightSource.dir = D3DXVECTOR3(0, 1, 0);	
-	lightSource.lightType = 2;
+	lightSource.lightType.x = 2;
 	decreaseIncrement = 5;
+	powerLossValue = 0.2;
+	powerLevel = (int)ceil((1.0f/powerLossValue));
+	int i = 0;
 }
 
 void FlashLightObject::update(float dt)
@@ -26,12 +29,14 @@ void FlashLightObject::update(float dt)
 	if(timer>decreaseIncrement)
 	{
 		timer = 0;
-		lightSource.diffuse.r-=0.2;
-		lightSource.diffuse.g-=0.2;
-		lightSource.diffuse.b-=0.2;
+		lightSource.diffuse.r-=powerLossValue;
+		lightSource.diffuse.g-=powerLossValue;
+		lightSource.diffuse.b-=powerLossValue;
 		lightSource.diffuse.r = max(lightSource.diffuse.r,0);
 		lightSource.diffuse.g = max(lightSource.diffuse.g,0);
 		lightSource.diffuse.b = max(lightSource.diffuse.b,0);
+		if(powerLevel>0)
+			powerLevel--;
 	}
 	GameObject::update(dt);
 	lightSource.pos = getPosition();
@@ -42,6 +47,7 @@ void FlashLightObject::getBattery()
 {
 	timer = 0;
 	lightSource.diffuse = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	powerLevel = (int)(1.0f/powerLossValue);
 }
 
 void FlashLightObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx, ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)

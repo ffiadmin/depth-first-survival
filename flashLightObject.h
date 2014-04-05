@@ -4,6 +4,7 @@
 #include "Light.h"
 #include "Mesh.h"
 #include "constants.h"
+#include <math.h>
 
 class FlashLightObject : public GameObject
 {
@@ -19,5 +20,7 @@ public:
 private:
 	float timer;
 	int decreaseIncrement;
+	int powerLevel;
+	float powerLossValue;
 	Mesh flashLight;
 };
