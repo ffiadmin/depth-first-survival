@@ -1,4 +1,5 @@
 #pragma once
+#define DEBUG_ENABLED
 
 #include <cmath>
 #include <ctime>
@@ -12,9 +13,13 @@ using std::stack;
 using std::vector;
 
 namespace mazeNS {
-	const int CELL_HEIGHT = 10;
-	const int CELL_LENGTH = 10;
-	const int CELL_WIDTH  = 10;
+//Cell dimensions
+	const int CELL_LENGTH = 10; // X
+	const int CELL_WIDTH  = 10; // Z
+
+//Wall dimensions
+	const int WALL_HEIGHT = 10;
+	const int WALL_THICK  = 1;
 }
 
 enum Direction { NORTH, EAST, SOUTH, WEST };
@@ -50,12 +55,12 @@ struct Node {
 
 class Maze {
 public : 
-	Maze(Dimension dim, ID3D10Device *md3dDevice);
+	Maze(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Device *md3dDevice);
 	~Maze();
 
 public : 
 	void build();
-	void draw(ID3D10EffectMatrixVariable* mfxWVPVar, ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
+	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
 	void update(float dt);
 
 public : 
@@ -65,7 +70,10 @@ public :
 public : 
 	void setEndPosition(Location location);
 	void setStartPosition(Location location);
-vector<GameObject> walls;
+
+private : 
+	void addWalls(Node *cell);
+
 private : 
 	Node *inaccessableSiblingCell(Node *currentCell);
 
@@ -75,7 +83,7 @@ private :
 	stack<Node*> locations;
 	ID3D10Device *md3dDevice;
 	Node *root;
-	
+	vector<GameObject> walls;
 
 private : 
 	Location end;
@@ -84,4 +92,5 @@ private :
 	int totalCells;
 	int visited;
 	int wallCount;
+	int wallsConstructed;
 };
