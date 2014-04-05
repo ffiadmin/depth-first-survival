@@ -15,6 +15,7 @@ public:
 	void update(float dt);
 	void setRotation(Vector3 r);
 	void getBattery();
+	int getPowerLevel() { return powerLevel;}
 	Light getLight() {return lightSource;}
 	Light lightSource;
 private:
