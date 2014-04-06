@@ -60,53 +60,24 @@ Maze::~Maze() {
 }
 
 void Maze::addWalls(Node *cell) {
-	//int xEast = 2 * mazeNS::CELL_LENGTH * cell->location.x;
-	int xEast = 2 * ((mazeNS::CELL_LENGTH / 2.0f) + cell->location.x * (mazeNS::CELL_LENGTH + mazeNS::WALL_THICK));
-	//int zEast = 2 * (mazeNS::CELL_WIDTH * cell->location.y) + 2 * mazeNS::CELL_WIDTH;
-	int zEast = 2 * ((1 + cell->location.y) * (mazeNS::CELL_WIDTH + mazeNS::WALL_THICK) - mazeNS::WALL_THICK / 2.0f);
-	//int xSouth = 2 * mazeNS::CELL_LENGTH * cell->location.x + 2 * mazeNS::CELL_WIDTH;
-	int xSouth = 2 * ((1 + cell->location.x) * (mazeNS::CELL_WIDTH + mazeNS::WALL_THICK));
-	//int zSouth = 2 * mazeNS::CELL_WIDTH * cell->location.y;// + mazeNS::CELL_WIDTH;
-	int zSouth = 2 * (mazeNS::CELL_WIDTH / 2.0f + cell->location.y * (mazeNS::CELL_WIDTH + mazeNS::WALL_THICK));
+//Place the east wall
+	if (cell->children.east == NULL && cell->location.x >= 0 && cell->location.x < size.x - 1) {
+		int xEast = 2 * (cell->location.x + 1) * mazeNS::CELL_WIDTH;
+		int zEast = 2 * (mazeNS::CELL_WIDTH / 2.0f + (cell->location.y * mazeNS::CELL_WIDTH));
 
-//Is this a non-last row, non-last column cell? Add at most two walls. [E/S]
-	if (cell->location.x != size.x && cell->location.y != size.y) {
-		if (cell->children.east == NULL) {
-			walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-			walls[wallsConstructed].setPosition(D3DXVECTOR3(xEast, 0, zEast));
-
-			++wallsConstructed;
-		}
-		
-		if (cell->children.south == NULL) {
-			walls[wallsConstructed].setPosition(D3DXVECTOR3(xSouth, 0, zSouth));
-
-			++wallsConstructed;
-		}
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(xEast, 0, zEast));
+		++wallsConstructed;
 	}
 	
-//Is this a non-last row, last column cell? Add at most one wall. [S]
-	if (cell->location.x != size.x && cell->location.y == size.y) {
-		if (cell->children.south == NULL) {
-			walls[wallsConstructed].setPosition(D3DXVECTOR3(xSouth, 0, zSouth));
+//Place the south wall
+	if (cell->children.south == NULL && cell->location.y > 0 && cell->location.y < size.y) {
+		int xSouth = 2 * (mazeNS::CELL_WIDTH / 2.0f + (cell->location.x * mazeNS::CELL_WIDTH));
+		int zSouth = 2 * cell->location.y * mazeNS::CELL_WIDTH;
 
-			++wallsConstructed;
-		}
+		walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(xSouth, 0, zSouth));
+		++wallsConstructed;
 	}
-
-//Is this a last row, non-last column cell? Add at most one wall. [E]
-	if (cell->location.x == size.x && cell->location.y != size.y) {
-		if (cell->children.east == NULL) {
-			walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-			walls[wallsConstructed].setPosition(D3DXVECTOR3(xEast, 0, zEast));
-
-			++wallsConstructed;
-		}
-	}
-
-//Is this a last row, last column cell?
-	// DO NOTHING!!!!
-	// *Beat box party*
 }
 
 void Maze::build() {
@@ -150,7 +121,7 @@ void Maze::build() {
 				nextCell->children.east = currentCell;
 			}
 
-			if (currentCell->location.x < nextCell->location.x && nextCell->location.x < size.x - 1) { // EAST
+			if (currentCell->location.x < nextCell->location.x) { // EAST
 				OutputDebugString(L"EAST");
 
 				currentCell->children.east = nextCell;
@@ -265,7 +236,7 @@ void Maze::build() {
 		//North connection
 			if (grid[i][j]->children.north != NULL) {
 				_itow_s(i, xNext, 10);
-				_itow_s(j - 1, yNext, 10);
+				_itow_s(j + 1, yNext, 10);
 
 				OutputDebugString(L"[North] (");
 				OutputDebugString(xNext);
@@ -277,7 +248,7 @@ void Maze::build() {
 		//South connection
 			if (grid[i][j]->children.south != NULL) {
 				_itow_s(i, xNext, 10);
-				_itow_s(j + 1, yNext, 10);
+				_itow_s(j - 1, yNext, 10);
 
 				OutputDebugString(L"[South] (");
 				OutputDebugString(xNext);
@@ -334,7 +305,7 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 				loc.x = currentCell->location.x + 1;
 				loc.y = currentCell->location.y;
 				
-				if (loc.x < size.x - 1) {
+				if (loc.x < size.x) {
 					operable = grid[loc.x][loc.y];
 				}
 				
@@ -344,7 +315,7 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 				loc.x = currentCell->location.x;
 				loc.y = currentCell->location.y + 1;
 
-				if (loc.y < size.y - 1) {
+				if (loc.y < size.y) {
 					operable = grid[loc.x][loc.y];
 				}
 				
