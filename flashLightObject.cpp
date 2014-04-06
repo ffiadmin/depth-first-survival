@@ -6,6 +6,8 @@ FlashLightObject::~FlashLightObject()
 FlashLightObject::FlashLightObject()
 {
 	timer = 0;
+	hitDistance = 10;
+	hitDimension = 3;
 	lightSource.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lightSource.diffuse  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lightSource.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
@@ -21,6 +23,13 @@ FlashLightObject::FlashLightObject()
 	powerLossValue = 0.2;
 	powerLevel = (int)ceil((1.0f/powerLossValue));
 	int i = 0;
+}
+
+bool FlashLightObject::hitTarget(GameObject* g)
+{
+	//create hit cube dimensions and check if the enemy is within it if so return true
+	
+	return true;
 }
 
 void FlashLightObject::update(float dt)

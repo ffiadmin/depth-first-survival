@@ -93,18 +93,19 @@ float4 PS(VS_OUT pIn) : SV_Target
     
 	float3 litColor = float3(0,0,0);
 	
-	for(uint i = 0; i < 2; i++)
+
+	for(uint i = 0; i < gNumLights.x; i++)
 	{
 		SurfaceInfo v = {pIn.posW, normalW, diffuseTexel, specTexel};
-		if(gLight[i].lightType == 0)
+		if(gLight[i].lightType.x == 0)
 		{
 			litColor += ParallelLight(v, gLight[i], gEyePosW);
 		}
-		else if(gLight[i].lightType == 1)
+		else if(gLight[i].lightType.x == 1)
 		{
 			litColor += PointLight(v, gLight[i], gEyePosW);
 		}
-		else if(gLight[i].lightType == 2)
+		else if(gLight[i].lightType.x == 2)
 		{
 			litColor += Spotlight(v, gLight[i], gEyePosW);
 		}
@@ -125,15 +126,15 @@ float4 PSColor(VS_OUT pIn) : SV_Target
 	
 	for(uint i = 0; i < gNumLights; i++)
 	{
-		if(gLight[i].lightType == 0)
+		if(gLight[i].lightType.x == 0)
 		{
 			litColor += ParallelLight(v, gLight[i], gEyePosW);
 		}
-		else if(gLight[i].lightType == 1)
+		else if(gLight[i].lightType.x == 1)
 		{
 			litColor += PointLight(v, gLight[i], gEyePosW);
 		}
-		else if(gLight[i].lightType == 2)
+		else if(gLight[i].lightType.x == 2)
 		{
 			litColor += Spotlight(v, gLight[i], gEyePosW);
 		}

@@ -12,10 +12,10 @@ struct Light
 	float4 ambient;
 	float4 diffuse;
 	float4 spec;
+	float4 lightType;
 	float3 att;
 	float  spotPower;
 	float  range;
-	int lightType;
 };
 
 struct SurfaceInfo

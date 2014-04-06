@@ -4,90 +4,36 @@ FPMovement::FPMovement(void) { }
 
 FPMovement::~FPMovement(void) { }
 
-void FPMovement::movePlayer(GameObject &player, float playerSpeed, float theta)
+void FPMovement::movePlayer(GameObject &player, float playerSpeed, Vector3 dir)
 {
-	player.setVelocity(movementFP(theta) * playerSpeed);
+	player.setVelocity(movementFP(dir) * playerSpeed);
 }
 
-Vector3 FPMovement::movementFP(float mTheta)
+Vector3 FPMovement::movementFP(Vector3 dir)
 {
-	Vector3 direction = VectorZero;
-	if( mTheta <= ToRadian(45.0f) && mTheta >= ToRadian(0.0f))
+	Vector3 direction = Vector3(0,0,0);
+	//D3DXVec3Transform(&start,&lightSource.dir,&rotateX)
+	if(GetAsyncKeyState('W') & 0x8000)
+		direction = Vector3(dir.x,0,dir.z);
+	if(GetAsyncKeyState('A') & 0x8000)
 	{
-		if(GetAsyncKeyState('W') & 0x8000)
-			direction.z = -1;
-		if(GetAsyncKeyState('A') & 0x8000)
-			direction.x = 1;
-		if(GetAsyncKeyState('S') & 0x8000)
-			direction.z = 1;
-		if(GetAsyncKeyState('D') & 0x8000)
-			direction.x = -1;
-		if(GetAsyncKeyState('Z') & 0x8000)
-			direction.y = 1;
-		if(GetAsyncKeyState('X') & 0x8000)
-			direction.y = -1;
+		Matrix r;
+		RotateY(&r,ToRadian(-90.0f));
+		Vector4 d;
+		D3DXVec3Transform(&d,&dir,&r);
+		direction = Vector3(d.x,0,d.z);
 	}
-	else if( mTheta <= ToRadian(135.0f) && mTheta > ToRadian(45.0f))
+	if(GetAsyncKeyState('S') & 0x8000)
+		direction = Vector3(dir.x,0,dir.z)*-1;
+	if(GetAsyncKeyState('D') & 0x8000)
 	{
-		if(GetAsyncKeyState('D') & 0x8000)
-			direction.z = -1;
-		if(GetAsyncKeyState('W') & 0x8000)
-			direction.x = 1;
-		if(GetAsyncKeyState('A') & 0x8000)
-			direction.z = 1;
-		if(GetAsyncKeyState('S') & 0x8000)
-			direction.x = -1;
-		if(GetAsyncKeyState('Z') & 0x8000)
-			direction.y = 1;
-		if(GetAsyncKeyState('X') & 0x8000)
-			direction.y = -1;
+		Matrix r;
+		RotateY(&r,ToRadian(90.0f));
+		Vector4 d;
+		D3DXVec3Transform(&d,&dir,&r);
+		direction = Vector3(d.x,0,d.z);
 	}
-	else if( mTheta > ToRadian(135.0f) && mTheta <= ToRadian(225.0f))
-	{
-		if(GetAsyncKeyState('S') & 0x8000)
-			direction.z = -1;
-		if(GetAsyncKeyState('D') & 0x8000)
-			direction.x = 1;
-		if(GetAsyncKeyState('W') & 0x8000)
-			direction.z = 1;
-		if(GetAsyncKeyState('A') & 0x8000)
-			direction.x = -1;
-		if(GetAsyncKeyState('Z') & 0x8000)
-			direction.y = 1;
-		if(GetAsyncKeyState('X') & 0x8000)
-			direction.y = -1;
-	}
-	else if( mTheta <= ToRadian(315.0f) && mTheta > ToRadian(225.0f))
-	{
-		if(GetAsyncKeyState('A') & 0x8000)
-			direction.z = -1;
-		if(GetAsyncKeyState('S') & 0x8000)
-			direction.x = 1;
-		if(GetAsyncKeyState('D') & 0x8000)
-			direction.z = 1;
-		if(GetAsyncKeyState('W') & 0x8000)
-			direction.x = -1;
-		if(GetAsyncKeyState('Z') & 0x8000)
-			direction.y = 1;
-		if(GetAsyncKeyState('X') & 0x8000)
-			direction.y = -1;
-	}
-	if( mTheta > ToRadian(315.0f) && mTheta <= ToRadian(360.0f))
-	{
-		if(GetAsyncKeyState('W') & 0x8000)
-			direction.z = -1;
-		if(GetAsyncKeyState('A') & 0x8000)
-			direction.x = 1;
-		if(GetAsyncKeyState('S') & 0x8000)
-			direction.z = 1;
-		if(GetAsyncKeyState('D') & 0x8000)
-			direction.x = -1;
-		if(GetAsyncKeyState('Z') & 0x8000)
-			direction.y = 1;
-		if(GetAsyncKeyState('X') & 0x8000)
-			direction.y = -1;
-	}
-
+	
 	if(direction != VectorZero)
 		Normalize(&direction, &direction);
 

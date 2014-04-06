@@ -288,12 +288,15 @@ void ColoredCubeApp::updateScene(float dt)
 	//update the camera
 	playerCamera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos);
 	//move the player
-	playerCameraMovement.movePlayer(testCube,10,mTheta);
+	playerCameraMovement.movePlayer(testCube,10,playerCamera.getTarget());
 
 	testCube.update(dt);
-	//flashLightObject.lightSource.dir = playerCamera.getTarget();
-	if(flashLightObject.getPosition()!=testCube.getPosition())
-		flashLightObject.setPosition(testCube.getPosition());//add code to make the flashlight visible
+
+	if(flashLightObject.getPosition()!=(testCube.getPosition()+(playerCamera.getTarget()*5)))
+	{
+		flashLightObject.setPosition(testCube.getPosition() + playerCamera.getTarget()*5);
+		int i = 0;
+	}
 
 	//orientating the flashlight
 	if(flashLightObject.lightSource.dir!=playerCamera.getTarget())
@@ -338,6 +341,8 @@ void ColoredCubeApp::updateScene(float dt)
 		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
 		flashLightObject.lightSource.dir = playerCamera.getTarget();
 	}
+
+	
 
 	flashLightObject.update(dt);
 	batteryObject.update(dt);

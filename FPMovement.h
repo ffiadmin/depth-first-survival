@@ -18,7 +18,7 @@ public:
 	~FPMovement(void);
 
 	//Call this in update
-	void movePlayer(GameObject &player, float playerSpeed, float theta);
-	Vector3 movementFP(float theta);
+	void movePlayer(GameObject &player, float playerSpeed, Vector3 dir);
+	Vector3 movementFP(Vector3 dir);
 };
 

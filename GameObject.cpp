@@ -86,7 +86,7 @@ void GameObject::update(float dt)
 	Scale(&scaleM,scale.x,scale.y,scale.z);
 	Translate(&transM, position.x, position.y, position.z);
 
-	world = rotXM * rotYM * rotZM*scaleM * transM;
+	world = scaleM * transM*rotXM * rotYM * rotZM;
 
 }
 

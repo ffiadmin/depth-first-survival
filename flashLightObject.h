@@ -18,10 +18,13 @@ public:
 	int getPowerLevel() { return powerLevel;}
 	Light getLight() {return lightSource;}
 	Light lightSource;
+	bool hitTarget(GameObject* g);
 private:
 	float timer;
 	int decreaseIncrement;
 	int powerLevel;
 	float powerLossValue;
+	float hitDistance;
+	float hitDimension;
 	Mesh flashLight;
 };
