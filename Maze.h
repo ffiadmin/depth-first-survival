@@ -15,6 +15,7 @@ using std::vector;
 namespace mazeNS {
 //Cell dimensions
 	const int CELL_LENGTH = 10; // X
+	const int CELL_PAD    = 2;
 	const int CELL_WIDTH  = 10; // Z
 
 //Wall dimensions
@@ -23,7 +24,28 @@ namespace mazeNS {
 }
 
 enum Direction { NORTH, EAST, SOUTH, WEST };
+struct Boundaries;
 struct Node;
+
+struct Borders {
+	Borders() { east = NULL; north = NULL; south = NULL; west = NULL; }
+	~Borders() { delete east; delete north; delete south; delete west; }
+
+	Boundaries *east;
+	Boundaries *north;
+	Boundaries *south;
+	Boundaries *west;
+};
+
+struct Boundaries {
+	float farDim;
+	float nearDim;
+};
+
+struct Dimension {
+	int x;
+	int z;
+};
 
 struct Intersection {
 	Intersection() { east = NULL; north = NULL; south = NULL; west = NULL; }
@@ -33,11 +55,6 @@ struct Intersection {
 	Node *north;
 	Node *south;
 	Node *west;
-};
-
-struct Dimension {
-	int x;
-	int z;
 };
 
 struct Location {
@@ -56,18 +73,17 @@ struct Node {
 
 class Maze {
 public : 
-	Maze();
+	Maze(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Device *md3dDevice);
 	~Maze();
-	void init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice);
 
 public : 
 	void build();
 	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
 	void update(float dt);
-	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
 
 public : 
 	Location cellToPx(Location cell);
+	bool collided(Location px);
 	Location pxToCell(Location px);
 
 public : 
