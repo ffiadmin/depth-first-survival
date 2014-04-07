@@ -63,9 +63,11 @@ private:
 	Box mBox;
 	Maze maze;
 
+	D3DXCOLOR ambientLight,hurtLight;
+
 	SoundItem* testSound;
 
-	GameObject testCube;
+	GameObject player;
 	//GameObject floor,wall1,wall2,wall3,wall4;
 	//EnemyObject enemy;
 	EnemyHoard ghosts;
@@ -151,8 +153,9 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(10,5,50,50)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(10,5,50,50)
 {
+	player.setHealth(10);
 	numLights=4;
 	prevLightType = 0;
 	score = 0;
@@ -182,6 +185,8 @@ void ColoredCubeApp::initApp()
 	//1: Point
 	//2: Spot
 
+	hurtLight = D3DXCOLOR(1,0,0,1);
+
 	//irrelavent because it should be replaced by the flashlight
 	lights[0].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[0].diffuse  = D3DXCOLOR(1.0f, 0.3f, 0.3f, 1.0f);
@@ -196,8 +201,9 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	lights[1].ambient  = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
-	//lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	lights[1].ambient  = ambientLight;
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
 	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[1].att.x    = 1.0f;
@@ -242,8 +248,8 @@ void ColoredCubeApp::initApp()
 	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));*/
 
-	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
-	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	player.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	player.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
@@ -290,17 +296,17 @@ void ColoredCubeApp::onResize()
 
 void ColoredCubeApp::updateScene(float dt)
 {
-	auto oldP = testCube.getPosition();
+	auto oldP = player.getPosition();
 	timer -= dt;
     std::wostringstream outs; 
 	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos,false);
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,false);
 	//move the player
-	camera.movePlayer(testCube,50,camera.getTarget(),false);
-	testCube.update(dt);
+	camera.movePlayer(player,30,camera.getTarget(),false);
+	player.update(dt);
 	Location playerLoc;
-	playerLoc.x = testCube.getPosition().x;
-	playerLoc.z = testCube.getPosition().z;
+	playerLoc.x = player.getPosition().x;
+	playerLoc.z = player.getPosition().z;
 	//collision detection
 	/*if(testCube.getPosition()!=oldP)
 	{
@@ -311,20 +317,31 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 	}*/
 
-	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	/*for(int i = 0; i < ghosts.getNumEnemies(); i++)
 	{
 		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 		{
-			ghosts.getEnemies()[i].setInActive();
+			ghosts.getEnemies()[i].decreaseHealth();
+		}
+	}*/
+
+	lights[1].ambient = ambientLight;
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		//player gets hit by a ghost
+		if(player.collided(&ghosts.getEnemies()[i]))
+		{
+			player.setHealth(player.getHealth()-1);
+			lights[1].ambient = hurtLight;
 		}
 	}
 
 	maze.update(dt);
 	
 
-	if(flashLightObject.getPosition()!=(testCube.getPosition()+(camera.getTarget()*5)))
+	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
 	{
-		flashLightObject.setPosition(testCube.getPosition() + camera.getTarget()*5);
+		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
 		int i = 0;
 	}
 
@@ -376,7 +393,7 @@ void ColoredCubeApp::updateScene(float dt)
 
 	flashLightObject.update(dt);
 	batteryObject.update(dt);
-	ghosts.update(dt,&testCube);
+	ghosts.update(dt,&player);
 	lightObject1.update(dt);
 	/*floor.update(dt);
 	wall1.update(dt);
@@ -386,7 +403,7 @@ void ColoredCubeApp::updateScene(float dt)
 
 	//flashLightObject.setRotation(
 
-	if(testCube.collided(&batteryObject))
+	if(player.collided(&batteryObject))
 	{
 		flashLightObject.getBattery();
 	}
@@ -413,7 +430,7 @@ void ColoredCubeApp::drawScene()
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
     md3dDevice->IASetInputLayout(mVertexLayout);
 
-	mfxEyePosVar->SetRawValue(&testCube.getPosition(), 0, sizeof(D3DXVECTOR3));
+	mfxEyePosVar->SetRawValue(&player.getPosition(), 0, sizeof(D3DXVECTOR3));
 
 	//set the number of lights to use
 	mfxNumLights->SetInt(numLights);

@@ -46,6 +46,8 @@ void EnemyHoard::update(float dt,GameObject* player)
 				enemies[i].setActive();
 				//set enemies position
 				enemies[i].setPosition(Vector3(x,6,z));
+				//reset their health
+				enemies[i].setHealth(10);
 				break;
 			}
 		}

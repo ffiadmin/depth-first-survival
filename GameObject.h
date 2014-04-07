@@ -40,7 +40,11 @@ public:
 	void setRotation(Vector3 r) {rotation = r;}
 	Vector3 getRotation() {return rotation;}
 
+	int getHealth() {return health;}
+	void setHealth(int h) { health = h; }
+
 private:
+	int health;
 	Geometry *geo; 
 	Vector3 position;
 	Vector3 velocity;
