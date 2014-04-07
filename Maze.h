@@ -15,6 +15,7 @@ using std::vector;
 namespace mazeNS {
 //Cell dimensions
 	const int CELL_LENGTH = 10; // X
+	const int CELL_PAD    = 2;
 	const int CELL_WIDTH  = 10; // Z
 
 //Wall dimensions
@@ -23,7 +24,24 @@ namespace mazeNS {
 }
 
 enum Direction { NORTH, EAST, SOUTH, WEST };
+
+struct Boundaries;
 struct Node;
+
+struct Borders {
+	Borders() { east = NULL; north = NULL; south = NULL; west = NULL; }
+	~Borders() { delete east; delete north; delete south; delete west; }
+
+	Boundaries *east;
+	Boundaries *north;
+	Boundaries *south;
+	Boundaries *west;
+};
+
+struct Boundaries {
+	float farDim;
+	float nearDim;
+};
 
 struct Intersection {
 	Intersection() { east = NULL; north = NULL; south = NULL; west = NULL; }
@@ -73,6 +91,7 @@ public :
 public : 
 	Location getEndPosition();
 	Location getStartPosition();
+	bool collided(Location px);
 
 public : 
 	void setStartPosition(Location location);

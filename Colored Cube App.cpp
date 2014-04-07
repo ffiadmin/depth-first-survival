@@ -154,7 +154,7 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(50), mEyePos(0.0f, 0.0f, 0.0f)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f)
 {
 	numLights=4;
 	prevLightType = 0;
@@ -185,6 +185,7 @@ void ColoredCubeApp::initApp()
 	//1: Point
 	//2: Spot
 
+	//irrelavent because it should be replaced by the flashlight
 	lights[0].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[0].diffuse  = D3DXCOLOR(1.0f, 0.3f, 0.3f, 1.0f);
 	lights[0].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
@@ -217,8 +218,8 @@ void ColoredCubeApp::initApp()
 	buildVertexLayouts();
 
 	Dimension d;
-	d.x = 5;
-	d.z = 5;
+	d.x = 10;
+	d.z = 10;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
 	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
@@ -297,7 +298,7 @@ void ColoredCubeApp::updateScene(float dt)
 	//update the camera
 	camera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos,false);
 	//move the player
-	camera.movePlayer(testCube,10,camera.getTarget(),false);
+	camera.movePlayer(testCube,50,camera.getTarget(),false);
 
 	maze.update(dt);
 	testCube.update(dt);

@@ -301,6 +301,55 @@ Location Maze::cellToPx(Location cell) {
 	return loc;
 }
 
+bool Maze::collided(Location px) {
+//Get the cell grid location
+	Location cell = pxToCell(px);
+
+//Get the cell center
+	Location center = cellToPx(cell);
+
+//Is this location valid?
+	if (cell.x == -1) return true;
+
+//Get the cell data
+	Borders borders;
+	Node *location = grid[cell.x][cell.z];
+
+//North wall boundaries
+	if (location->children.north == NULL) {
+		borders.north->farDim = center.z + (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_WIDTH / 2.0f);
+		borders.north->nearDim = center.z + (mazeNS::CELL_WIDTH / 2.0f - mazeNS::CELL_PAD);
+
+		if (px.z <= borders.north->farDim & px.z >= borders.north->nearDim) return true;
+	}
+
+//East wall boundaries
+	if (location->children.east == NULL) {
+		borders.north->farDim = center.x + (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_LENGTH / 2.0f);
+		borders.north->nearDim = center.x + (mazeNS::CELL_LENGTH / 2.0f - mazeNS::CELL_PAD);
+
+		if (px.x <= borders.north->farDim & px.x >= borders.north->nearDim) return true;
+	}
+
+//South wall boundaries
+	if (location->children.south == NULL) {
+		borders.south->farDim = center.z - (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_WIDTH / 2.0f);
+		borders.south->nearDim = center.z - (mazeNS::CELL_WIDTH / 2.0f - mazeNS::CELL_PAD);
+
+		if (px.z >= borders.north->farDim & px.z <= borders.north->nearDim) return true;
+	}
+
+//West wall boundaries
+	if (location->children.east == NULL) {
+		borders.north->farDim = center.x - (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_LENGTH / 2.0f);
+		borders.north->nearDim = center.x - (mazeNS::CELL_LENGTH / 2.0f - mazeNS::CELL_PAD);
+
+		if (px.x >= borders.north->farDim & px.x <= borders.north->nearDim) return true;
+	}
+
+	return false;
+}
+
 void Maze::draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX) {
 	D3DXMATRIX worldViewProj;
 	D3DXMatrixIdentity(&worldViewProj);
