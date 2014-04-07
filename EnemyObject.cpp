@@ -8,8 +8,8 @@ void EnemyObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D
 
 void EnemyObject::update(float dt, GameObject* player)
 {
-	Vector3 direction = getPosition()-player->getPosition();
+	Vector3 direction = player->getPosition()-getPosition();
 	Normalize(&direction,&direction);
-	//setVelocity(direction * getSpeed());
+	setVelocity(direction *15);
 	GameObject::update(dt);
 }

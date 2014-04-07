@@ -29,12 +29,8 @@
 #include "LineObject.h"
 #include "SoundItem.h"
 #include "Mesh.h"
-//#include "FPCamera.h"
-//#include "FPMovement.h"
-//#include "TPMovement.h"
-//#include "TPCamera.h"
 #include "playerControls.h"
-#include "EnemyObject.h"
+#include "EnemyHoard.h"
 #include "LightObject.h"
 #include "Maze.h"
 
@@ -70,8 +66,9 @@ private:
 	SoundItem* testSound;
 
 	GameObject testCube;
-	GameObject floor,wall1,wall2,wall3,wall4;
-	EnemyObject enemy;
+	//GameObject floor,wall1,wall2,wall3,wall4;
+	//EnemyObject enemy;
+	EnemyHoard ghosts;
 	Mesh testMesh;
 	FlashLightObject flashLightObject;
 	BatteryObject batteryObject;
@@ -154,7 +151,7 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), testCube(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(10,5,50,50)
 {
 	numLights=4;
 	prevLightType = 0;
@@ -199,8 +196,8 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	//lights[1].ambient  = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
-	lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	lights[1].ambient  = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	//lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
 	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[1].att.x    = 1.0f;
@@ -222,7 +219,7 @@ void ColoredCubeApp::initApp()
 	d.z = 10;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
-	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
 
 	mBox.init(md3dDevice, 1.0f);
 
@@ -237,13 +234,13 @@ void ColoredCubeApp::initApp()
 	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
 	//make the texture init in another function so it is not an issue switching between shaders
-	floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
-	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	/*floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
+	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
 
 	wall1.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(-20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
 	wall2.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
 	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
-	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));
+	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));*/
 
 	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
@@ -252,10 +249,10 @@ void ColoredCubeApp::initApp()
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
 	lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
 
 	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	enemy.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
+	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
@@ -314,6 +311,14 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 	}*/
 
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+		{
+			ghosts.getEnemies()[i].setInActive();
+		}
+	}
+
 	maze.update(dt);
 	
 
@@ -371,13 +376,13 @@ void ColoredCubeApp::updateScene(float dt)
 
 	flashLightObject.update(dt);
 	batteryObject.update(dt);
-	enemy.update(dt,&testCube);
+	ghosts.update(dt,&testCube);
 	lightObject1.update(dt);
-	floor.update(dt);
+	/*floor.update(dt);
 	wall1.update(dt);
 	wall2.update(dt);
 	wall3.update(dt);
-	wall4.update(dt);
+	wall4.update(dt);*/
 
 	//flashLightObject.setRotation(
 
@@ -445,17 +450,17 @@ void ColoredCubeApp::drawScene()
      
 	//testCube.draw(mView, mProj, mTech);
 	
-	flashLightObject.draw(mView,mProj,mTechColor2);
+	//flashLightObject.draw(mView,mProj,mTechColor2);
 	
 	batteryObject.draw(mView,mProj,mTechColor2);
 	
-	enemy.draw(mView,mProj,mTechColor2);
+	ghosts.draw(mView,mProj,mTechColor2);
 
-	floor.draw(mView, mProj, mTech);
+	/*floor.draw(mView, mProj, mTech);
 	wall1.draw(mView, mProj, mTech);
 	wall2.draw(mView, mProj, mTech);
 	wall3.draw(mView, mProj, mTech);
-	wall4.draw(mView, mProj, mTech);
+	wall4.draw(mView, mProj, mTech);*/
 	lightObject1.draw(mView,mProj,mTech);
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
