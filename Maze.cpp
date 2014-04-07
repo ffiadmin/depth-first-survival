@@ -1,82 +1,9 @@
 #include "Maze.h"
 
-Maze::Maze(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Device *md3dDevice) {
-//Set up the random generator
-	srand(time(NULL));
-
-//Set up the maze size and DFS algorithm
-	size = dim;
-	totalCells = dim.x * dim.z;
-	visited = 1;
-
-//Create the matrix
-	Location loc;
-
-	for(int i = 0; i < dim.x; ++i) {
-		vector<Node*> row;
-
-		for(int j = 0; j < dim.z; ++j) {
-			loc.x = i;
-			loc.z = j;
-			
-			row.push_back(new Node(loc));
-		}
-
-		grid.push_back(row);
-	}
-
-//Starting position
-	loc.x = rand() % dim.x;
-	loc.z = rand() % dim.z;
-	
-	root = grid[loc.x][loc.z];
-
-//Determine the number of walls needed for the maze
-	wallCount = (2 * dim.x * dim.z) - dim.x - dim.z; //Number of inner walls, 2xy - x - y
-	walls.resize(wallCount);
-	wallsConstructed = 0;
-	
-	#ifdef DEBUG_ENABLED
-	//Debug output
-		wchar_t buffer[10];
-		_itow_s(wallCount, buffer, 10);
-
-		OutputDebugString(L"\n*******************************************\n");
-		OutputDebugString(L"MAZE CLASS OUTPUT\n");
-		OutputDebugString(L"*******************************************\n");
-		OutputDebugString(L"Generated: ");
-		OutputDebugString(buffer);
-		OutputDebugString(L" walls\n\n");
-	#endif
-
-//Initialize the box object for the walls
-	box.init(md3dDevice, 1.0f);
-
-	for(int i = 0; i < wallCount; ++i) {
-		walls[i].init(&box, mfxWVPVar, sqrt(2.0f), D3DXVECTOR3(0, 0, 0), D3DXVECTOR3(0, 0, 0), 0,
-				D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH));
-	}
-}
+Maze::Maze() {}
 
 Maze::~Maze() {
 	delete root;
-
-//Delete from the grid matrix
-	for(int i = 0; i < size.x; ++i) {
-		for(int j = 0; j < size.z; ++j) {
-			delete grid[i][j];
-		}
-	}
-
-//Delete from the stack
-	Node *top;
-
-	while(locations.size() > 0) {
-		top = locations.top();
-		locations.pop();
-		
-		delete top;
-	}
 }
 
 void Maze::addWalls(Node *cell) {
@@ -323,10 +250,13 @@ void Maze::build() {
 	}
 
 //Add the north bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * size.x));
-	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * size.x, 0, 2 * mazeNS::CELL_WIDTH * size.z));
-	++wallsConstructed;
+	for(int i = 0; i < size.z; i++)
+	{
+		walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH));
+		walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3((i*mazeNS::CELL_WIDTH)+mazeNS::CELL_LENGTH * size.x, 0, 2 * mazeNS::CELL_WIDTH * size.z));
+		++wallsConstructed;
+	}
 
 //Add the east bounding wall
 	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * size.z));
@@ -470,8 +400,8 @@ Location Maze::pxToCell(Location px) {
 
 //Calculate the cell position
 	Location loc;
-	loc.x = floor((px.x * size.x) / dim.x);
-	loc.z = floor((px.z * size.z) / dim.z);
+	loc.x = floor((double)((px.x * size.x) / dim.x));
+	loc.z = floor((double)((px.z * size.z) / dim.z));
 
 	return loc;
 }
@@ -479,6 +409,73 @@ Location Maze::pxToCell(Location px) {
 void Maze::setStartPosition(Location location) {
 	start = location;
 	root = grid[location.x][location.z];
+}
+
+void Maze::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
+{
+	for(int i = 0; i < wallsConstructed; i++)
+	{
+		walls[i].setTex(diffuseLoc,specLoc,diffuseMap,specMap);
+	}
+}
+
+void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice)
+{
+	//Set up the random generator
+	srand(time(NULL));
+
+//Set up the maze size and DFS algorithm
+	size = dim;
+	totalCells = dim.x * dim.z;
+	visited = 1;
+
+//Create the matrix
+	Location loc;
+
+	for(int i = 0; i < dim.x; ++i) {
+		vector<Node*> row;
+
+		for(int j = 0; j < dim.z; ++j) {
+			loc.x = i;
+			loc.z = j;
+			
+			row.push_back(new Node(loc));
+		}
+
+		grid.push_back(row);
+	}
+
+//Starting position
+	loc.x = rand() % dim.x;
+	loc.z = rand() % dim.z;
+	
+	root = grid[loc.x][loc.z];
+
+//Determine the number of walls needed for the maze
+	wallCount = (2 * dim.x * dim.z) - dim.x - dim.z; //Number of inner walls, 2xy - x - y
+	walls.resize(wallCount);
+	wallsConstructed = 0;
+	
+	#ifdef DEBUG_ENABLED
+	//Debug output
+		wchar_t buffer[10];
+		_itow_s(wallCount, buffer, 10);
+
+		OutputDebugString(L"\n*******************************************\n");
+		OutputDebugString(L"MAZE CLASS OUTPUT\n");
+		OutputDebugString(L"*******************************************\n");
+		OutputDebugString(L"Generated: ");
+		OutputDebugString(buffer);
+		OutputDebugString(L" walls\n\n");
+	#endif
+
+//Initialize the box object for the walls
+	box.init(md3dDevice, 1.0f);
+
+	for(int i = 0; i < wallCount; ++i) {
+		walls[i].init(&box, mfxWVPVar,fx2, sqrt(2.0f), D3DXVECTOR3(0, 0, 0), D3DXVECTOR3(0, 0, 0), 0,
+				D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH));
+	}
 }
 
 void Maze::update(float dt) {

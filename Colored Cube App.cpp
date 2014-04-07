@@ -29,12 +29,14 @@
 #include "LineObject.h"
 #include "SoundItem.h"
 #include "Mesh.h"
-#include "FPCamera.h"
-#include "FPMovement.h"
-#include "TPMovement.h"
-#include "TPCamera.h"
+//#include "FPCamera.h"
+//#include "FPMovement.h"
+//#include "TPMovement.h"
+//#include "TPCamera.h"
+#include "playerControls.h"
 #include "EnemyObject.h"
 #include "LightObject.h"
+#include "Maze.h"
 
 class ColoredCubeApp : public D3DApp
 {
@@ -55,8 +57,7 @@ private:
  
 private:
 	Audio* audio;
-	FPCamera playerCamera;
-	FPMovement playerCameraMovement;
+	playerControls camera;
 	Light lights[4];
 	LightObject lightObject1;
 	//Input* input;
@@ -64,6 +65,7 @@ private:
 	Quad quad1;
 	Line line, line2, line3;
 	Box mBox;
+	Maze maze;
 
 	SoundItem* testSound;
 
@@ -196,8 +198,8 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	lights[1].ambient  = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
-	//lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	//lights[1].ambient  = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
+	lights[1].ambient  = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
 	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
 	lights[1].att.x    = 1.0f;
@@ -213,6 +215,13 @@ void ColoredCubeApp::initApp()
 
 	buildFX();
 	buildVertexLayouts();
+
+	Dimension d;
+	d.x = 5;
+	d.z = 5;
+	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
+	maze.build();
+	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	mBox.init(md3dDevice, 1.0f);
 
@@ -262,7 +271,7 @@ void ColoredCubeApp::initApp()
         }
     }
 	//set up the camera
-	playerCamera.setHeightAndWidth(mClientWidth,mClientHeight);
+	camera.setHeightAndWidth(mClientWidth,mClientHeight);
 
 	//audio->playCue(MUSIC);
 
@@ -278,7 +287,7 @@ void ColoredCubeApp::onResize()
 	D3DApp::onResize();
 	//float aspect = (float)mClientWidth/mClientHeight;
 	//D3DXMatrixPerspectiveFovLH(&mProj, 0.25f*PI, aspect, 1.0f, 1000.0f);
-	playerCamera.resize(mProj,0.25f*PI,1.0f,1000.0f);
+	camera.resize(mProj,0.25f*PI,1.0f,1000.0f);
 }
 
 void ColoredCubeApp::updateScene(float dt)
@@ -286,29 +295,30 @@ void ColoredCubeApp::updateScene(float dt)
 	timer -= dt;
     std::wostringstream outs; 
 	//update the camera
-	playerCamera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos);
+	camera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos,false);
 	//move the player
-	playerCameraMovement.movePlayer(testCube,10,playerCamera.getTarget());
+	camera.movePlayer(testCube,10,camera.getTarget(),false);
 
+	maze.update(dt);
 	testCube.update(dt);
 
-	if(flashLightObject.getPosition()!=(testCube.getPosition()+(playerCamera.getTarget()*5)))
+	if(flashLightObject.getPosition()!=(testCube.getPosition()+(camera.getTarget()*5)))
 	{
-		flashLightObject.setPosition(testCube.getPosition() + playerCamera.getTarget()*5);
+		flashLightObject.setPosition(testCube.getPosition() + camera.getTarget()*5);
 		int i = 0;
 	}
 
 	//orientating the flashlight
-	if(flashLightObject.lightSource.dir!=playerCamera.getTarget())
+	if(flashLightObject.lightSource.dir!=camera.getTarget())
 	{
 		//vectors for caluclating z-rotation
-		Vector2 cameraXY = Vector2(playerCamera.getTarget().x,playerCamera.getTarget().y);
+		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
 		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
 		//vectors for calculating y-rotation
-		Vector2 cameraXZ = Vector2(playerCamera.getTarget().x,playerCamera.getTarget().z);
+		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
 		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
 		//vectors for calculating x-rotation
-		Vector2 cameraYZ = Vector2(playerCamera.getTarget().y,playerCamera.getTarget().z);
+		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
 		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
 
 		float xAngle = flashLightObject.getRotation().x;
@@ -339,7 +349,7 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 
 		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
-		flashLightObject.lightSource.dir = playerCamera.getTarget();
+		flashLightObject.lightSource.dir = camera.getTarget();
 	}
 
 	
@@ -411,6 +421,9 @@ void ColoredCubeApp::drawScene()
 	// set the point to the shader technique
 	D3D10_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
+
+	//draw the maze
+	maze.draw(mTech,mView,mProj);
 
 	//draw the origin
 	origin.draw(mView, mProj, mTech);

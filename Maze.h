@@ -56,13 +56,15 @@ struct Node {
 
 class Maze {
 public : 
-	Maze(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Device *md3dDevice);
+	Maze();
 	~Maze();
+	void init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice);
 
 public : 
 	void build();
 	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
 	void update(float dt);
+	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
 
 public : 
 	Location cellToPx(Location cell);
