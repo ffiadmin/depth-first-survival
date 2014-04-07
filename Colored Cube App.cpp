@@ -238,7 +238,7 @@ void ColoredCubeApp::initApp()
 
 	//make the texture init in another function so it is not an issue switching between shaders
 	floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
-	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	wall1.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(-20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
 	wall2.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
@@ -246,13 +246,13 @@ void ColoredCubeApp::initApp()
 	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 
 	testCube.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
-	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
+	testCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
 	lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	enemy.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
@@ -293,15 +293,29 @@ void ColoredCubeApp::onResize()
 
 void ColoredCubeApp::updateScene(float dt)
 {
+	auto oldP = testCube.getPosition();
 	timer -= dt;
     std::wostringstream outs; 
 	//update the camera
 	camera.update(mTheta,mPhi,mRadius,0,dt,testCube,mView,mEyePos,false);
 	//move the player
 	camera.movePlayer(testCube,50,camera.getTarget(),false);
+	testCube.update(dt);
+	Location playerLoc;
+	playerLoc.x = testCube.getPosition().x;
+	playerLoc.z = testCube.getPosition().z;
+	//collision detection
+	/*if(testCube.getPosition()!=oldP)
+	{
+		if(maze.collided(playerLoc))
+		{
+			testCube.setPosition(oldP);
+			testCube.update(dt);
+		}
+	}*/
 
 	maze.update(dt);
-	testCube.update(dt);
+	
 
 	if(flashLightObject.getPosition()!=(testCube.getPosition()+(camera.getTarget()*5)))
 	{
