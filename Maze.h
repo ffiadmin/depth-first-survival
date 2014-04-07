@@ -1,5 +1,5 @@
 #pragma once
-#define DEBUG_ENABLED
+//#define DEBUG_ENABLED
 
 #include <cmath>
 #include <ctime>
@@ -27,6 +27,7 @@ struct Node;
 
 struct Intersection {
 	Intersection() { east = NULL; north = NULL; south = NULL; west = NULL; }
+	~Intersection() { delete east; delete north; delete south; delete west; }
 
 	Node *east;
 	Node *north;
@@ -36,16 +37,16 @@ struct Intersection {
 
 struct Dimension {
 	int x;
-	int y;
+	int z;
 };
 
 struct Location {
 	int x;
-	int y;
+	int z;
 };
 
 struct Node {
-	Node() : toEnd(false) { location.x = 0; location.y = 0; }
+	Node() : toEnd(false) { location.x = 0; location.z = 0; }
 	Node(Location location) : location(location), toEnd(false) { }
 
 	Intersection children;
@@ -64,17 +65,18 @@ public :
 	void update(float dt);
 
 public : 
+	Location cellToPx(Location cell);
+	Location pxToCell(Location px);
+
+public : 
 	Location getEndPosition();
 	Location getStartPosition();
 
 public : 
-	void setEndPosition(Location location);
 	void setStartPosition(Location location);
 
 private : 
 	void addWalls(Node *cell);
-
-private : 
 	Node *inaccessableSiblingCell(Node *currentCell);
 
 private : 
