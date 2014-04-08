@@ -73,17 +73,14 @@ class Maze {
 public : 
 	Maze();
 	~Maze();
-	void init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice);
-	void setCeilTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
-	void setFloorTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
-
+	
 public : 
 	void build();
 	bool collided(Location px);
 	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
+	void init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice);
 	void update(float dt);
-	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
-
+	
 public : 
 	Location cellToPx(Location cell);
 	Location pxToCell(Location px);
@@ -96,7 +93,12 @@ public :
 	Location getStartPosition();
 
 public : 
+	void setCeilingVisibility(bool visible);
+	void setCeilTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
+	void setFloorTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
 	void setStartPosition(Location location);
+	void setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
+
 
 private : 
 	void addWalls(Node *cell);

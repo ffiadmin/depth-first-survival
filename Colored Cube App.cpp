@@ -279,7 +279,7 @@ void ColoredCubeApp::initApp()
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
 		auto spot = maze.cellToPx(l);
-		lamps[i].setPosition(Vector3(l.x,5,l.z));
+		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 	}
 
 	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
@@ -290,7 +290,7 @@ void ColoredCubeApp::initApp()
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
 		auto spot = maze.cellToPx(l);
-		batteries[i].setPosition(Vector3(l.x,5,l.z));
+		batteries[i].setPosition(Vector3(spot.x,2,spot.z));
 	}
 
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
