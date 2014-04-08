@@ -278,10 +278,10 @@ void Maze::build() {
 	++wallsConstructed;
 
 //Add the ceiling
-	//walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * dim.x, mazeNS::CELL_WIDTH * dim.z));
-	//walls[wallsConstructed].setRotation(D3DXVECTOR3(0, 0, ToRadian(90)));
-	//walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
-	//++wallsConstructed;
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * dim.x, mazeNS::CELL_WIDTH * dim.z));
+	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, 0, ToRadian(90)));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
+	++wallsConstructed;
 }
 
 Location Maze::cellToPx(Location cell) {
@@ -502,8 +502,28 @@ void Maze::draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX
 	}
 }
 
+Location Maze::getCenterCell() {
+	Location center;
+	center.x = dim.x / 2;
+	center.z = dim.z / 2;
+
+	return center;
+}
+
+Location Maze::getCenterPx() {
+	Location center;
+	center.x = size.x / 2;
+	center.z = size.z / 2;
+
+	return center;
+}
+
 Location Maze::getEndPosition() {
 	return end;
+}
+
+Dimension Maze::getDimension() {
+	return size;
 }
 
 Location Maze::getStartPosition() {

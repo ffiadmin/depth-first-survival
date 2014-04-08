@@ -15,7 +15,7 @@ using std::vector;
 namespace mazeNS {
 //Cell dimensions
 	const int CELL_LENGTH = 10; // X
-	const int CELL_PAD    = 2;
+	const int CELL_PAD    = 1;
 	const int CELL_WIDTH  = 10; // Z
 
 //Wall dimensions
@@ -77,6 +77,7 @@ public :
 
 public : 
 	void build();
+	bool collided(Location px);
 	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
 	void update(float dt);
 	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
@@ -86,9 +87,11 @@ public :
 	Location pxToCell(Location px);
 
 public : 
+	Location getCenterCell();
+	Location getCenterPx();
 	Location getEndPosition();
+	Dimension getDimension();
 	Location getStartPosition();
-	bool collided(Location px);
 
 public : 
 	void setStartPosition(Location location);
