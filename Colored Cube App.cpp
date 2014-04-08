@@ -47,6 +47,7 @@ public:
 	void updateScene(float dt);
 	void drawScene(); 
 	void updateGameState();
+	void reloadLevel();
 
 private:
 	void buildFX();
@@ -184,7 +185,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	onceAgainEnd = true;
 	goal = false;
 	currentKeys = 0;
-	totalKeys = 10;
+	totalKeys = 1;
 	numLightObjects = 5;
 	numBatteries = 20;
 	player.setHealth(10);
@@ -422,10 +423,6 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 		oldBLevel = flashLightObject.getPowerLevel();
 		//check for win game conditions	
-		if(player.collided(&endCube))
-		{
-			return;
-		}
 		auto oldP = player.getPosition();
 		timer -= dt;
 		std::wostringstream outs; 
@@ -464,39 +461,65 @@ void ColoredCubeApp::updateScene(float dt)
 			}
 		}
 
-		for(int i = 0; i < totalKeys; i++)
+		if(gamestate == level1)
 		{
-			keyObject[i].update(dt);
-			if(player.collided(&keyObject[i]))
+			for(int i = 0; i < totalKeys; i++)
 			{
-				currentKeys++;
-				keyObject[i].setInActive();
-				audio->playCue(ITEM);
+				keyObject[i].update(dt);
+				if(player.collided(&keyObject[i]))
+				{
+					currentKeys++;
+					keyObject[i].setInActive();
+					audio->playCue(ITEM);
+				}
 			}
 		}
 
-		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		if(gamestate==level2)
 		{
-			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+			for(int i = 0; i < ghosts.getNumEnemies(); i++)
 			{
-				ghosts.getEnemies()[i].decreaseHealth();
-				audio->playCue(G_HIT);
+				if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+				{
+					ghosts.getEnemies()[i].decreaseHealth();
+					audio->playCue(G_HIT);
+				}
 			}
+		}
+
+		if(gamestate==level2)
+		{
+			if(player.collided(&endCube))
+			{
+				gamestate = win;
+				maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Win.jpg",L"brickwork-bump-map.jpg");
+				maze.update(dt);
+			}
+		}
+
+		if(player.getHealth()<=0)
+		{
+			gamestate = gameover;
+			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
+			maze.update(dt);
 		}
 
 		endCube.update(dt);
 
 		lights[1].ambient = ambientLight;
-		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		if(gamestate == level2)
 		{
-			//player gets hit by a ghost
-			if(player.collided(&ghosts.getEnemies()[i]))
+			for(int i = 0; i < ghosts.getNumEnemies(); i++)
 			{
-				player.setHealth(player.getHealth()-1);
-				lights[1].ambient = hurtLight;
-				//make flash take longer
-				ghosts.getEnemies()[i].setInActive();
-				audio->playCue(P_HIT);
+				//player gets hit by a ghost
+				if(player.collided(&ghosts.getEnemies()[i]))
+				{
+					player.setHealth(player.getHealth()-1);
+					lights[1].ambient = hurtLight;
+					//make flash take longer
+					ghosts.getEnemies()[i].setInActive();
+					audio->playCue(P_HIT);
+				}
 			}
 		}
 
@@ -552,8 +575,6 @@ void ColoredCubeApp::updateScene(float dt)
 			flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
 			flashLightObject.lightSource.dir = camera.getTarget();
 		}
-
-	
 
 		flashLightObject.update(dt);
 		//batteryObject.update(dt);
@@ -615,9 +636,12 @@ void ColoredCubeApp::drawScene()
 	// set the light array
 	lights[0] = flashLightObject.lightSource;
 	//lights[2] = lightObject1.getLight();
-	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	if(gamestate == level2)
 	{
-		lights[2+i] = ghosts.getEnemies()[i].getLight();
+		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		{
+			lights[2+i] = ghosts.getEnemies()[i].getLight();
+		}
 	}
 	for(int i = 0; i < numLightObjects; i++)
 	{
@@ -640,9 +664,12 @@ void ColoredCubeApp::drawScene()
 	maze.draw(mTech,mView,mProj);
 	
 	//draw the keys
-	for(int i = 0; i < totalKeys; i++)
+	if(gamestate == level1)
 	{
-		keyObject[i].draw(mView,mProj,mTech);
+		for(int i = 0; i < totalKeys; i++)
+		{
+			keyObject[i].draw(mView,mProj,mTech);
+		}
 	}
 
 	//draw the end cube
@@ -747,9 +774,10 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = level1;
        }
-       if(gamestate == level1 && (currentKeys/totalKeys))
+       if(gamestate == level1 && (currentKeys==totalKeys))
        {
               gamestate = level2;
+			  reloadLevel();
        }
        if(gamestate == level2 && goal)
        {
@@ -759,10 +787,50 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = gameover;
        }
-       if(gamestate == gameover && (GetAsyncKeyState('E') & 0x8000))
+       if((gamestate == gameover ||gamestate==win)&& (GetAsyncKeyState('E') & 0x8000))
        {
               gamestate = title;
        }
 }
 
- 
+ void ColoredCubeApp::reloadLevel()
+{
+	currentKeys = 0;
+	flashLightObject.getBattery();
+	//add in the maze reset function
+	Dimension d;
+	d.x=20;
+	d.z = 20;
+	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
+	maze.build();
+	/*maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
+	maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
+	maze.setFloorTex(mfxDiffuseMapVar,mfxSpecMapVar,L"carpet_diffuse.jpg",L"brickwork-bump-map.jpg");*/
+
+	for(int i = 0; i < numLightObjects; i++)
+	{
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
+	}
+	for(int i = 0; i < totalKeys; i++)
+	{
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		keyObject[i].setPosition(Vector3(spot.x,-1,spot.z));
+		keyObject[i].setActive();
+	}
+	for(int i = 0; i < numBatteries; i++)
+	{
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
+		batteries[i].setActive();
+	}
+}
