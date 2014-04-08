@@ -661,7 +661,7 @@ void Maze::setStartPosition(Location location) {
 
 void Maze::setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap) {
 	for(int i = 0; i < wallsConstructed; ++i) {
-		walls[wallsConstructed].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
+		walls[i].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
 	}
 }
 
