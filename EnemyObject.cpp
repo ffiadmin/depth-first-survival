@@ -6,7 +6,7 @@ void EnemyObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D
 	string types[3];
 	types[0] = "enemy.txt";
 	types[1] = "garretEnemy.txt";
-	types[2] = "powerUp1.txt";
+	types[2] = "donut.txt";
 	int num = rand()%3;
 	enemy.init(device,1,types[num]);
 	GameObject::init(&enemy,fx,fx2,r,pos,vel,sp,s);

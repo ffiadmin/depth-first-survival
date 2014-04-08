@@ -73,6 +73,8 @@ private:
 	D3DXCOLOR ambientLight,hurtLight;
 
 	//SoundItem* testSound;
+	Mesh key;
+	GameObject keyObject[10];
 
 	GameObject player;
 	GameObject endCube;
@@ -173,7 +175,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 {
 	goal = false;
 	currentKeys = 0;
-	totalKeys = 0;
+	totalKeys = 10;
 	numLightObjects = 5;
 	numBatteries = 20;
 	player.setHealth(10);
@@ -186,6 +188,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mProj);
 	D3DXMatrixIdentity(&mWVP); 
 	oldBLevel = 0;
+	gamestate = title;
 }
 
 ColoredCubeApp::~ColoredCubeApp()
@@ -282,6 +285,17 @@ void ColoredCubeApp::initApp()
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 		lamps[i].setColor(D3DXCOLOR(0.2f, 0.5f, 0.3f, 1.0f));
+	}
+
+	key.init(md3dDevice,1,"item1.txt");
+	for(int i = 0; i < totalKeys; i++)
+	{
+		keyObject[i].init(&key,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		keyObject[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
 	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
@@ -404,6 +418,17 @@ void ColoredCubeApp::updateScene(float dt)
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
+		}
+	}
+
+	for(int i = 0; i < totalKeys; i++)
+	{
+		keyObject[i].update(dt);
+		if(player.collided(&keyObject[i]))
+		{
+			currentKeys++;
+			keyObject[i].setInActive();
+			audio->playCue(ITEM);
 		}
 	}
 
@@ -558,6 +583,12 @@ void ColoredCubeApp::drawScene()
 	//draw the maze
 	maze.draw(mTech,mView,mProj);
 	
+	//draw the keys
+	for(int i = 0; i < totalKeys; i++)
+	{
+		keyObject[i].draw(mView,mProj,mTech);
+	}
+
 	//draw the end cube
 	endCube.draw(mView,mProj,mTech);
 
