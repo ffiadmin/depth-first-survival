@@ -27,8 +27,6 @@ enum Direction { NORTH, EAST, SOUTH, WEST };
 struct Node;
 
 struct Boundaries {
-	Boundaries() { }
-
 	float farDim;
 	float nearDim;
 };
@@ -94,11 +92,10 @@ public :
 
 public : 
 	void setCeilingVisibility(bool visible);
-	void setCeilTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
+	void setCeilTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
 	void setFloorTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
 	void setStartPosition(Location location);
 	void setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
-
 
 private : 
 	void addWalls(Node *cell);

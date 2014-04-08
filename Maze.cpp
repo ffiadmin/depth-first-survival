@@ -250,26 +250,34 @@ void Maze::build() {
 	}
 
 //Add the north bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * dim.x));
-	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, 0, 2 * mazeNS::CELL_WIDTH * dim.z));
-	++wallsConstructed;
+	for(int i = 0; i < dim.x; ++i) {
+		walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH));
+		walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH + (2 * i * mazeNS::CELL_LENGTH), 0, 2 * mazeNS::CELL_WIDTH * dim.z));
+		++wallsConstructed;
+	}
 
 //Add the east bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(0, 0, mazeNS::CELL_WIDTH * dim.z));
-	++wallsConstructed;
+	for(int i = 0; i < dim.z; ++i) {
+		walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(0, 0, mazeNS::CELL_WIDTH + (2 * i * mazeNS::CELL_WIDTH)));
+		++wallsConstructed;
+	}
 
 //Add the south bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * dim.x));
-	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, 0, 0));
-	++wallsConstructed;
+	for(int i = 0; i < dim.x; ++i) {
+		walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH));
+		walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH + (2 * i * mazeNS::CELL_LENGTH), 0, 0));
+		++wallsConstructed;
+	}
 
 //Add the west bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(2 * mazeNS::CELL_LENGTH * dim.x, 0, mazeNS::CELL_WIDTH * dim.z));
-	++wallsConstructed;
+	for(int i = 0; i < dim.z; ++i) {
+		walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH));
+		walls[wallsConstructed].setPosition(D3DXVECTOR3(2 * mazeNS::CELL_LENGTH * dim.x, 0, mazeNS::CELL_WIDTH + (2 * i * mazeNS::CELL_WIDTH)));
+		++wallsConstructed;
+	}
 
 //Add the floor
 	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * dim.x, mazeNS::CELL_WIDTH * dim.z));
@@ -633,7 +641,7 @@ void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Effe
 	root = grid[loc.x][loc.z];
 
 //Determine the number of walls needed for the maze
-	wallCount = (2 * dim.x * dim.z) - dim.x - dim.z; //Number of inner walls, 2xy - x - y
+	wallCount = (2 * dim.x * dim.z) + dim.x + dim.z; //Number of walls, 2xy + x + y
 	walls.resize(wallCount);
 	wallsConstructed = 0;
 	
