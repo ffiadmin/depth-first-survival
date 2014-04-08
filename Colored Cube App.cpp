@@ -55,7 +55,7 @@ private:
 	//Audio* audio;
 	playerControls camera;
 	Light lights[12];
-	LightObject lightObject1;
+	//LightObject lightObject1;
 	//Input* input;
 	float score;
 	Quad quad1;
@@ -72,15 +72,22 @@ private:
 	//GameObject floor,wall1,wall2,wall3,wall4;
 	//EnemyObject enemy;
 	EnemyHoard ghosts;
-	Mesh testMesh;
+	//Mesh testMesh;
 	FlashLightObject flashLightObject;
-	BatteryObject batteryObject;
+	//BatteryObject batteryObject;
+	BatteryObject batteries[20];
+	LightObject lamps[10];
+
+	int numLightObjects;
+	int numBatteries;
 
 	Origin origin;
 
 	float spinAmount;
 	int prevLightType;//used for switching light types
 	int numLights;
+	int mazeX;
+	int mazeZ;
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
@@ -156,6 +163,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
   mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(3,10,50,50)
 {
+	numLightObjects = 10;
+	numBatteries = 20;
 	player.setHealth(10);
 	numLights=5;
 	prevLightType = 0;
@@ -224,13 +233,15 @@ void ColoredCubeApp::initApp()
 	Dimension d;
 	d.x = 10;
 	d.z = 10;
+	mazeX = d.x;
+	mazeZ = d.z;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
 	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
 
 	mBox.init(md3dDevice, 1.0f);
 
-	testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
+	//testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
 
 	line.init(md3dDevice, 1.0f, DARKBROWN);
 	line2.init(md3dDevice, 1.0f, RED);
@@ -255,10 +266,30 @@ void ColoredCubeApp::initApp()
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
-	lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	//lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	//lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	for(int i = 0; i < numLightObjects; i++)
+	{
+		lamps[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.75,0.75,0.75));
+		lamps[i].setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		lamps[i].setPosition(Vector3(l.x,5,l.z));
+	}
 
-	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	for(int i = 0; i < numBatteries; i++)
+	{
+		batteries[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+		Location l;
+		l.x = rand()%mazeX;
+		l.z = rand()%mazeZ;
+		auto spot = maze.cellToPx(l);
+		batteries[i].setPosition(Vector3(l.x,5,l.z));
+	}
+
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
 	ghosts.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
 	
@@ -322,6 +353,16 @@ void ColoredCubeApp::updateScene(float dt)
 			player.setVelocity(Vector3(0,0,0));
 			player.update(dt);
 		}
+	}
+
+	for(int i = 0; i < numLightObjects; i++)
+	{
+		lamps[i].update(dt);
+	}
+
+	for(int i = 0; i < numBatteries; i++)
+	{
+		batteries[i].update(dt);
 	}
 
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
@@ -401,9 +442,9 @@ void ColoredCubeApp::updateScene(float dt)
 	
 
 	flashLightObject.update(dt);
-	batteryObject.update(dt);
+	//batteryObject.update(dt);
 	ghosts.update(dt,&player);
-	lightObject1.update(dt);
+	//lightObject1.update(dt);
 	/*floor.update(dt);
 	wall1.update(dt);
 	wall2.update(dt);
@@ -412,10 +453,10 @@ void ColoredCubeApp::updateScene(float dt)
 
 	//flashLightObject.setRotation(
 
-	if(player.collided(&batteryObject))
+	/*if(player.collided(&batteryObject))
 	{
 		flashLightObject.getBattery();
-	}
+	}*/
 	//mParallelLight.pos = testCube.getPosition();
 	//set up the flashlight light direction based on the direction the geometry is pointing
 	//D3DXVec3Normalize(&mParallelLight.dir, &(playerCamera.getTarget()-testCube.getPosition()));
@@ -469,10 +510,20 @@ void ColoredCubeApp::drawScene()
 	//draw the origin
 	origin.draw(mView, mProj, mTech);
 	
+	for(int i = 0; i < numLightObjects; i++)
+	{
+		lamps[i].draw(mView,mProj,mTech);
+	}
+
+	for(int i = 0; i < numBatteries; i++)
+	{
+		batteries[i].draw(mView,mProj,mTechColor2);
+	}
+
 	flashLightObject.draw(mView,mProj,mTechColor2);
 	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
-	batteryObject.draw(mView,mProj,mTechColor2);
+	//batteryObject.draw(mView,mProj,mTechColor2);
 	player.draw(mView,mProj,mTechColor2);
 	ghosts.draw(mView,mProj,mTech);
 
@@ -481,7 +532,7 @@ void ColoredCubeApp::drawScene()
 	wall2.draw(mView, mProj, mTech);
 	wall3.draw(mView, mProj, mTech);
 	wall4.draw(mView, mProj, mTech);*/
-	lightObject1.draw(mView,mProj,mTech);
+	//lightObject1.draw(mView,mProj,mTech);
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
