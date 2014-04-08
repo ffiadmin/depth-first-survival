@@ -10,6 +10,11 @@ playerControls::~playerControls(void)
 {
 }
 
+void playerControls::init(Maze *m)
+{
+	maze = m;
+}
+
 void playerControls::movePlayer(GameObject &player, float playerSpeed, Vector3 dir, bool perspective)
 {
 	if(perspective)
@@ -63,7 +68,7 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 	if(perspective)
 	{
 		float mPhi = 0.1f, mTheta = 0.0f;
-		float mRadius = 25;
+		float mRadius = maze->getDimension().x/2.0f;
 		/*if(GetAsyncKeyState('J') & 0x8000)	theta -= 2.0f*dt;
 		if(GetAsyncKeyState('L') & 0x8000)	theta += 2.0f*dt;
 		if(GetAsyncKeyState('I') & 0x8000)	phi -= 2.0f*dt;
@@ -83,15 +88,15 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 
 		// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 		// and mTheta measured counterclockwise from -z.
-		eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + player.getPosition().x;
-		eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + player.getPosition().z;
-		eyePos.y =  mRadius*cosf(mPhi) + player.getPosition().y;
+		eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
+		eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + maze->getDimension().z/2.0f;
+		eyePos.y =  mRadius*cosf(mPhi);
 
 		// Build the view matrix.
 		target = Vector3(0.0f, 0.0f, 0.0f);
-		target.x = player.getPosition().x;
-		target.y = player.getPosition().y;
-		target.z = player.getPosition().z;
+		target.x = maze->getDimension().x/2.0f;
+		target.y = 0.0f;
+		target.z = maze->getDimension().z/2.0f;
 		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 		D3DXMatrixLookAtLH(&view, &eyePos, &target, &up);
 		Normalize(&target,&target);

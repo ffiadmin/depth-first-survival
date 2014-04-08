@@ -6,6 +6,7 @@
 #include "d3dApp.h"
 #include "d3dUtil.h"
 #include "constants.h"
+#include "Maze.h"
 
 //Include the class for the player here
 //Change class of player variable accordingly
@@ -17,10 +18,13 @@ public:
 	playerControls(void);
 	~playerControls(void);
 
+	Maze *maze;
+
 	//Call this in update
 	void movePlayer(GameObject &player, float playerSpeed, Vector3 dir, bool perspective);
 	Vector3 movementFP(Vector3 dir);
 
+	void init(Maze *m);
 	//Call this in onResize
 	void resize(D3DXMATRIX &mProj, float FOV, float nearClip, float farClip);
 	//Call this in initApp
