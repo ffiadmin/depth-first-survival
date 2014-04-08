@@ -54,7 +54,7 @@ private:
 private:
 	//Audio* audio;
 	playerControls camera;
-	Light lights[12];
+	Light lights[15];
 	//LightObject lightObject1;
 	//Input* input;
 	float score;
@@ -69,6 +69,8 @@ private:
 	//SoundItem* testSound;
 
 	GameObject player;
+	GameObject endCube;
+	Light endLight;
 	//GameObject floor,wall1,wall2,wall3,wall4;
 	//EnemyObject enemy;
 	EnemyHoard ghosts;
@@ -166,7 +168,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	numLightObjects = 10;
 	numBatteries = 20;
 	player.setHealth(10);
-	numLights=5;
+	numLights=15;
 	prevLightType = 0;
 	score = 0;
 	timer = 30;
@@ -197,20 +199,6 @@ void ColoredCubeApp::initApp()
 	//2: Spot
 
 	hurtLight = D3DXCOLOR(1,0,0,1);
-
-	//irrelavent because it should be replaced by the flashlight
-	lights[0].ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	lights[0].diffuse  = D3DXCOLOR(1.0f, 0.3f, 0.3f, 1.0f);
-	lights[0].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	lights[0].att.x    = 1.0f;
-	lights[0].att.y    = 0.0f;
-	lights[0].att.z    = 0.0f;
-	lights[0].spotPow  = 10;
-	lights[0].range    = 100;
-	lights[0].pos = D3DXVECTOR3(10,20,10);
-	lights[0].dir = D3DXVECTOR3(0, -1, 0);	
-	lights[0].lightType.x = 2;
-	prevLightType = lights[0].lightType.x;
 
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
@@ -265,6 +253,9 @@ void ColoredCubeApp::initApp()
 
 	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(1,1,1));
 	player.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	Location start = maze.getStartPosition();
+	start = maze.cellToPx(start);
+	player.setPosition(Vector3(start.x+10,0,start.z+10));
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
@@ -280,7 +271,28 @@ void ColoredCubeApp::initApp()
 		l.z = rand()%mazeZ;
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
+		lamps[i].setColor(D3DXCOLOR(0.2f, 0.5f, 0.3f, 1.0f));
 	}
+
+	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
+	endCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	Location end = maze.getEndPosition();
+	end = maze.cellToPx(end);
+	endCube.setPosition(Vector3(end.x,0,end.z));
+
+	//set up the end light
+	endLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	endLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 0.3f, 1.0f);
+	endLight.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	endLight.att.x    = 1.0f;
+	endLight.att.y    = 0.0f;
+	endLight.att.z    = 0.0f;
+	endLight.spotPow  = 10;
+	endLight.range    = 100;
+	endLight.pos = D3DXVECTOR3(end.x,10,end.z);
+	endLight.dir = D3DXVECTOR3(0, -1, 0);	
+	endLight.lightType.x = 2;
+
 
 	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	for(int i = 0; i < numBatteries; i++)
@@ -336,6 +348,11 @@ void ColoredCubeApp::updateScene(float dt)
 		perspective = true;
 	else
 		perspective = false;
+	//check for win game conditions
+	if(player.collided(&endCube))
+	{
+		return;
+	}
 	auto oldP = player.getPosition();
 	timer -= dt;
     std::wostringstream outs; 
@@ -380,6 +397,8 @@ void ColoredCubeApp::updateScene(float dt)
 			ghosts.getEnemies()[i].decreaseHealth();
 		}
 	}
+
+	endCube.update(dt);
 
 	lights[1].ambient = ambientLight;
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
@@ -500,6 +519,11 @@ void ColoredCubeApp::drawScene()
 	{
 		lights[2+i] = ghosts.getEnemies()[i].getLight();
 	}
+	for(int i = 0; i < numLightObjects; i++)
+	{
+		lights[2+ghosts.getNumEnemies()+i] = lamps[i].getLight();
+	}
+	lights[numLights-1] = endLight;
 
 	mfxLightVar->SetRawValue(&lights[0], 0, numLights*sizeof(Light));
  
@@ -514,6 +538,9 @@ void ColoredCubeApp::drawScene()
 
 	//draw the maze
 	maze.draw(mTech,mView,mProj);
+	
+	//draw the end cube
+	endCube.draw(mView,mProj,mTech);
 
 	//draw the origin
 	origin.draw(mView, mProj, mTech);
