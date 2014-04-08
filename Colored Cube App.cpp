@@ -99,6 +99,11 @@ private:
 	int mazeX;
 	int mazeZ;
 
+	bool once;
+	bool onceAgain;
+	bool onceAgainStart;
+	bool onceAgainEnd;
+
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
 	ID3D10EffectTechnique* mTech;
@@ -173,6 +178,10 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
   mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(3,10,50,50)
 {
+	once = true;
+	onceAgain = true;
+	onceAgainStart = true;
+	onceAgainEnd = true;
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
@@ -373,16 +382,36 @@ void ColoredCubeApp::updateScene(float dt)
 	{
 		float rad = 0.0f;
 		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+		maze.update(dt);
+		if(once)
+		{
+			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Title Screen.jpg",L"brickwork-bump-map.jpg");
+			once = false;
+		}
+		ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 		//set ceiling texture here
 	}
 	if(gamestate == controls)
 	{
 		float rad = 0.0f;
 		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+		maze.update(dt);
+		if(onceAgain)
+		{
+			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
+			onceAgain = false;
+		}
+		ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 		//set ceiling texture here
 	}
 	if(gamestate == level1 || gamestate == level2)
 	{
+		ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+		if(onceAgainStart)
+		{
+			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
+			onceAgainStart = false;
+		}
 		if(GetAsyncKeyState('Y') & 0x8000)
 			perspective = true;
 		else
@@ -557,6 +586,12 @@ void ColoredCubeApp::updateScene(float dt)
 		float rad = 0.0f;
 		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
 		//set ceiling texture here
+		if(onceAgainEnd)
+		{
+			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
+			onceAgainEnd = false;
+			onceAgainStart = true;
+		}
 	}
 }
 
@@ -630,7 +665,7 @@ void ColoredCubeApp::drawScene()
 	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
 	//batteryObject.draw(mView,mProj,mTechColor2);
-	player.draw(mView,mProj,mTechColor2);
+	//player.draw(mView,mProj,mTechColor2);
 	ghosts.draw(mView,mProj,mTech);
 
 	/*floor.draw(mView, mProj, mTech);
@@ -708,7 +743,7 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = controls;
        }
-	   if(gamestate == title && (GetAsyncKeyState('G') & 0x8000))
+	   if(gamestate == controls && (GetAsyncKeyState('G') & 0x8000))
        {
               gamestate = level1;
        }

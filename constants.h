@@ -42,7 +42,7 @@ const UINT GAME_HEIGHT = 600;               // height of game in pixels
 #define Length2 D3DXVec2Length
 
 //game states
-enum Gamestates {title, level1, level2, gameover, win};
+enum Gamestates {title, controls,level1, level2, gameover, win};
 
 //audio stuff
 //C:\Users\GEARHARTJJ1\Documents\College\Junior year\Spring\Games 2\Game Jam 1 Gearhart Young
