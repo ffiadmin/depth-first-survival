@@ -14,7 +14,7 @@ FlashLightObject::FlashLightObject()
 	lightSource.att.x    = 1.0f;
 	lightSource.att.y    = 0.0f;
 	lightSource.att.z    = 0.0f;
-	lightSource.spotPow  = 80;
+	lightSource.spotPow  = 70;
 	lightSource.range    = 100;
 	lightSource.pos = D3DXVECTOR3(10,20,10);
 	lightSource.dir = D3DXVECTOR3(0, 1, 0);	

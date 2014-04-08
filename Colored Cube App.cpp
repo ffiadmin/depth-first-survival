@@ -201,7 +201,7 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	ambientLight = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
 	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lights[1].ambient  = ambientLight;
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
@@ -291,7 +291,7 @@ void ColoredCubeApp::onResize()
 	D3DApp::onResize();
 	//float aspect = (float)mClientWidth/mClientHeight;
 	//D3DXMatrixPerspectiveFovLH(&mProj, 0.25f*PI, aspect, 1.0f, 1000.0f);
-	camera.resize(mProj,0.25f*PI,1.0f,1000.0f);
+	camera.resize(mProj,0.33f*PI,1.0f,1000.0f);
 }
 
 void ColoredCubeApp::updateScene(float dt)
@@ -333,6 +333,8 @@ void ColoredCubeApp::updateScene(float dt)
 		{
 			player.setHealth(player.getHealth()-1);
 			lights[1].ambient = hurtLight;
+			//make flash take longer
+			ghosts.getEnemies()[i].setInActive();
 		}
 	}
 
