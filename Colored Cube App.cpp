@@ -238,6 +238,8 @@ void ColoredCubeApp::initApp()
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
 	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
+	maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
+	maze.setFloorTex(mfxDiffuseMapVar,mfxSpecMapVar,L"carpet_diffuse.jpg",L"brickwork-bump-map.jpg");
 
 	mBox.init(md3dDevice, 1.0f);
 
@@ -520,7 +522,7 @@ void ColoredCubeApp::drawScene()
 		batteries[i].draw(mView,mProj,mTechColor2);
 	}
 
-	flashLightObject.draw(mView,mProj,mTechColor2);
+	//flashLightObject.draw(mView,mProj,mTechColor2);
 	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
 	//batteryObject.draw(mView,mProj,mTechColor2);
