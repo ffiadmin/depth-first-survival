@@ -67,9 +67,16 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 {
 	if(perspective)
 	{
-		maze->setCeilingVisibility(false);
+		if(radius == 0.0f)
+		{
+			maze->setCeilingVisibility(true);
+		}
+		else
+		{
+			maze->setCeilingVisibility(false);
+		}
 		float mPhi = 0.1f, mTheta = 0.0f;
-		float mRadius = maze->getDimension().x;
+		float mRadius = maze->getDimension().x + 20.0f;
 		/*if(GetAsyncKeyState('J') & 0x8000)	theta -= 2.0f*dt;
 		if(GetAsyncKeyState('L') & 0x8000)	theta += 2.0f*dt;
 		if(GetAsyncKeyState('I') & 0x8000)	phi -= 2.0f*dt;
