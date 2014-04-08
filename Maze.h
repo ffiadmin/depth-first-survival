@@ -110,6 +110,7 @@ private :
 	vector<GameObject> walls;
 
 private : 
+	bool alreadyInit;
 	Dimension dim;
 	Location end;
 	Dimension size;

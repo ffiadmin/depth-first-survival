@@ -1,6 +1,6 @@
 #include "Maze.h"
 
-Maze::Maze() { }
+Maze::Maze() : alreadyInit(false) { }
 
 Maze::~Maze() {
 	delete root;
@@ -608,6 +608,33 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 }
 
 void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice) {
+//Is this maze being re-initialized?
+	if (alreadyInit) {
+	//Remove the grid
+		for(int i = 0; i < this->dim.x; ++i) {
+			grid[i].clear();
+		}
+		
+		grid.clear();
+
+	//Empty the stack
+		for(int i = 0; i < locations.size(); ++i) {
+			locations.pop();
+		}
+
+	//Delete the root node
+		delete root;
+
+	//Delete all the walls
+		walls.clear();
+
+	//Reset variables
+		totalCells = 0;
+		visited = 0;
+		wallCount = 0;
+		wallsConstructed = 0;
+	}
+
 //Set up the random generator
 	srand(time(NULL));
 
@@ -665,6 +692,8 @@ void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Effe
 		walls[i].init(&box, mfxWVPVar, fx2,sqrt(2.0f), D3DXVECTOR3(0, 0, 0), D3DXVECTOR3(0, 0, 0), 0,
 				D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH));
 	}
+
+	alreadyInit = true;
 }
 
 Location Maze::pxToCell(Location px) {
