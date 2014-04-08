@@ -41,15 +41,22 @@ const UINT GAME_HEIGHT = 600;               // height of game in pixels
 #define Dot2 D3DXVec2Dot
 #define Length2 D3DXVec2Length
 
+//game states
+enum Gamestates {title, level1, level2, gameover, win};
+
 //audio stuff
 //C:\Users\GEARHARTJJ1\Documents\College\Junior year\Spring\Games 2\Game Jam 1 Gearhart Young
 const char WAVE_BANK[] = "audio\\win\\Wave Bank.xwb";
 const char SOUND_BANK[] = "audio\\win\\Sound Bank.xsb";
 //sound cues
-const char GUN_SHOT[] = "gun_sound_effect";
-const char TARGET_SHATTER[] = "Light Bulb Breaking-SoundBible.com-53066515";
-const char MUSIC[] = "04 All of Us";
-
-
+const char MUSIC[] = "Penumbra";
+const char WIN[] = "You Win";
+const char BATTERY_DIE[] = "Battery Dying";
+const char BATTERY_CHARGE[] = "Battery Charging";
+const char P_HIT[] = "Ghost Hits You";
+const char G_HIT[] = "Ghost Getting Hit";
+const char ITEM[] = "Pick Up a Powerup";
+const char WILHELM[] = "WilhelmScream";
+const char LOSE[] = "You Lost";
 
 #endif

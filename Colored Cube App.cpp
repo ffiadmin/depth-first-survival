@@ -46,13 +46,15 @@ public:
 	void onResize();
 	void updateScene(float dt);
 	void drawScene(); 
+	void updateGameState();
 
 private:
 	void buildFX();
 	void buildVertexLayouts();
  
 private:
-	//Audio* audio;
+	Gamestates gamestate;
+	Audio* audio;
 	playerControls camera;
 	Light lights[15];
 	//LightObject lightObject1;
@@ -63,6 +65,10 @@ private:
 	Box mBox;
 	Maze maze;
 	bool perspective;
+
+	bool goal;
+	int currentKeys, totalKeys;
+
 
 	D3DXCOLOR ambientLight,hurtLight;
 
@@ -84,7 +90,7 @@ private:
 	int numBatteries;
 
 	Origin origin;
-
+	int oldBLevel;
 	float spinAmount;
 	int prevLightType;//used for switching light types
 	int numLights;
@@ -165,10 +171,13 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
   mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(3,10,50,50)
 {
-	numLightObjects = 10;
+	goal = false;
+	currentKeys = 0;
+	totalKeys = 0;
+	numLightObjects = 5;
 	numBatteries = 20;
 	player.setHealth(10);
-	numLights=15;
+	numLights=10;
 	prevLightType = 0;
 	score = 0;
 	timer = 30;
@@ -176,6 +185,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mView);
 	D3DXMatrixIdentity(&mProj);
 	D3DXMatrixIdentity(&mWVP); 
+	oldBLevel = 0;
 }
 
 ColoredCubeApp::~ColoredCubeApp()
@@ -310,22 +320,22 @@ void ColoredCubeApp::initApp()
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
-   // audio = new Audio();
-   // if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
-   // {
-   //     if( FAILED( hr = audio->initialize() ) )
-   //     {
-			//exit(1);
-   //         //if( hr == HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND ) )
-   //         //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system because media file not found."));
-   //         //else
-   //         //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
-   //     }
-   // }
+    audio = new Audio();
+    if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
+    {
+        if( FAILED( hr = audio->initialize() ) )
+        {
+			exit(1);
+            //if( hr == HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND ) )
+            //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system because media file not found."));
+            //else
+            //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
+        }
+    }
 	//set up the camera
 	camera.setHeightAndWidth(mClientWidth,mClientHeight);
 
-	//audio->playCue(MUSIC);
+	audio->playCue(MUSIC);
 
 	//input->initialize(this->getMainWnd(), false);  
 	//sound object
@@ -344,11 +354,17 @@ void ColoredCubeApp::onResize()
 
 void ColoredCubeApp::updateScene(float dt)
 {
+	updateGameState();
 	if(GetAsyncKeyState('Y') & 0x8000)
 		perspective = true;
 	else
 		perspective = false;
-	//check for win game conditions
+	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
+	{
+		audio->playCue(BATTERY_DIE);
+	}
+	oldBLevel = flashLightObject.getPowerLevel();
+	//check for win game conditions	
 	if(player.collided(&endCube))
 	{
 		return;
@@ -387,6 +403,7 @@ void ColoredCubeApp::updateScene(float dt)
 		{
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
+			audio->playCue(BATTERY_CHARGE);
 		}
 	}
 
@@ -395,6 +412,7 @@ void ColoredCubeApp::updateScene(float dt)
 		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 		{
 			ghosts.getEnemies()[i].decreaseHealth();
+			audio->playCue(G_HIT);
 		}
 	}
 
@@ -410,6 +428,7 @@ void ColoredCubeApp::updateScene(float dt)
 			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
+			audio->playCue(P_HIT);
 		}
 	}
 
@@ -630,4 +649,29 @@ void ColoredCubeApp::buildVertexLayouts()
     HR(md3dDevice->CreateInputLayout(vertexDesc, 6, PassDesc.pIAInputSignature,
 		PassDesc.IAInputSignatureSize, &mVertexLayout));
 }
+
+void ColoredCubeApp::updateGameState()
+{
+       if(gamestate == title && (GetAsyncKeyState('E') & 0x8000))
+       {
+              gamestate = level1;
+       }
+       if(gamestate == level1 && (currentKeys/totalKeys))
+       {
+              gamestate = level2;
+       }
+       if(gamestate == level2 && goal)
+       {
+              gamestate = win;
+       }
+       if((gamestate == level1 || gamestate == level2) && player.getHealth() <= 0)
+       {
+              gamestate = gameover;
+       }
+       if(gamestate == gameover && (GetAsyncKeyState('E') & 0x8000))
+       {
+              gamestate = title;
+       }
+}
+
  
