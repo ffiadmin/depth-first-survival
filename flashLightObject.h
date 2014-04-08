@@ -4,6 +4,7 @@
 #include "Light.h"
 #include "Mesh.h"
 #include "constants.h"
+#include "Box.h"
 #include <math.h>
 
 class FlashLightObject : public GameObject
@@ -19,7 +20,10 @@ public:
 	Light getLight() {return lightSource;}
 	Light lightSource;
 	bool hitTarget(GameObject* g);
+	GameObject hitBox;
 private:
+	
+	Box b;
 	float timer;
 	int decreaseIncrement;
 	int powerLevel;
