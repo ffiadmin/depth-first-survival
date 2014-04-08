@@ -203,8 +203,8 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	//ambientLight = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
-	ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lights[1].ambient  = ambientLight;
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
 	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
@@ -250,7 +250,7 @@ void ColoredCubeApp::initApp()
 	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));*/
 
-	player.init(&mBox,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 	player.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
@@ -259,8 +259,8 @@ void ColoredCubeApp::initApp()
 	lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
 
-	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,1,Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
+	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
@@ -323,13 +323,13 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 	}*/
 
-	/*for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
 	{
 		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 		{
 			ghosts.getEnemies()[i].decreaseHealth();
 		}
-	}*/
+	}
 
 	lights[1].ambient = ambientLight;
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
@@ -446,16 +446,7 @@ void ColoredCubeApp::drawScene()
 	// set the light array
 	lights[0] = flashLightObject.lightSource;
 	lights[2] = lightObject1.getLight();
-	/*if(testCube.collided(&enemy))
-	{
-		if(lights[0].lightType<3)
-			prevLightType = lights[0].lightType;
-		lights[0].lightType = 3;
-	}
-	else
-	{
-		lights[0].lightType = prevLightType;
-	}*/
+
 	mfxLightVar->SetRawValue(&lights[0], 0, numLights*sizeof(Light));
  
 	// Don't transform texture coordinates, so just use identity transformation.
@@ -472,13 +463,12 @@ void ColoredCubeApp::drawScene()
 
 	//draw the origin
 	origin.draw(mView, mProj, mTech);
-     
-	//testCube.draw(mView, mProj, mTech);
 	
-	//flashLightObject.draw(mView,mProj,mTechColor2);
+	flashLightObject.draw(mView,mProj,mTechColor2);
+	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
 	batteryObject.draw(mView,mProj,mTechColor2);
-	
+	player.draw(mView,mProj,mTechColor2);
 	ghosts.draw(mView,mProj,mTechColor2);
 
 	/*floor.draw(mView, mProj, mTech);
