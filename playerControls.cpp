@@ -1,3 +1,8 @@
+/*
+Implemented by Garrett Young
+Camera and movement controls
+*/
+
 #include "playerControls.h"
 
 

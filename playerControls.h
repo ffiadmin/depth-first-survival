@@ -1,3 +1,8 @@
+/*
+Implemented by Garrett Young
+Camera and movement controls
+*/
+
 #pragma once
 #define _USE_MATH_DEFINES
 
