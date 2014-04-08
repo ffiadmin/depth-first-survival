@@ -62,6 +62,7 @@ private:
 	Line line, line2, line3;
 	Box mBox;
 	Maze maze;
+	bool perspective;
 
 	D3DXCOLOR ambientLight,hurtLight;
 
@@ -160,6 +161,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	prevLightType = 0;
 	score = 0;
 	timer = 30;
+	perspective = false;
 	D3DXMatrixIdentity(&mView);
 	D3DXMatrixIdentity(&mProj);
 	D3DXMatrixIdentity(&mWVP); 
@@ -201,8 +203,8 @@ void ColoredCubeApp::initApp()
 	lights[0].lightType.x = 2;
 	prevLightType = lights[0].lightType.x;
 
-	ambientLight = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
-	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+	//ambientLight = D3DXCOLOR(0.03f, 0.003f, 0.02f, 1.0f);
+	ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	lights[1].ambient  = ambientLight;
 	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
 	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
@@ -296,13 +298,17 @@ void ColoredCubeApp::onResize()
 
 void ColoredCubeApp::updateScene(float dt)
 {
+	if(GetAsyncKeyState('Y') & 0x8000)
+		perspective = true;
+	else
+		perspective = false;
 	auto oldP = player.getPosition();
 	timer -= dt;
     std::wostringstream outs; 
 	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,false);
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
 	//move the player
-	camera.movePlayer(player,30,camera.getTarget(),false);
+	camera.movePlayer(player,30,camera.getTarget(),perspective);
 	player.update(dt);
 	Location playerLoc;
 	playerLoc.x = player.getPosition().x;
