@@ -1,6 +1,6 @@
 #include "Maze.h"
 
-Maze::Maze() {}
+Maze::Maze() { }
 
 Maze::~Maze() {
 	delete root;
@@ -8,7 +8,7 @@ Maze::~Maze() {
 
 void Maze::addWalls(Node *cell) {
 //Place the east wall
-	if (cell->children.east == NULL && cell->location.x >= 0 && cell->location.x < size.x - 1) {
+	if (cell->children.east == NULL && cell->location.x >= 0 && cell->location.x < dim.x - 1) {
 		int xEast = 2 * (cell->location.x + 1) * mazeNS::CELL_LENGTH;
 		int zEast = 2 * (mazeNS::CELL_WIDTH / 2.0f + (cell->location.z * mazeNS::CELL_WIDTH));
 
@@ -17,7 +17,7 @@ void Maze::addWalls(Node *cell) {
 	}
 	
 //Place the south wall
-	if (cell->children.south == NULL && cell->location.z > 0 && cell->location.z < size.z) {
+	if (cell->children.south == NULL && cell->location.z > 0 && cell->location.z < dim.z) {
 		int xSouth = 2 * (mazeNS::CELL_LENGTH / 2.0f + (cell->location.x * mazeNS::CELL_LENGTH));
 		int zSouth = 2 * cell->location.z * mazeNS::CELL_WIDTH;
 
@@ -178,8 +178,8 @@ void Maze::build() {
 	//Display all the connections!
 		OutputDebugString(L"Connected edges:\n");
 
-		for(int i = 0; i < size.x; ++i) {
-			for(int j = 0; j < size.z; ++j) {
+		for(int i = 0; i < dim.x; ++i) {
+			for(int j = 0; j < dim.z; ++j) {
 				_itow_s(i, xCur, 10);
 				_itow_s(j, zCur, 10);
 
@@ -243,106 +243,252 @@ void Maze::build() {
 	#endif
 
 //Position the walls
-	for(int i = 0; i < size.x; ++i) {
-		for(int j = 0; j < size.z; ++j) {
+	for(int i = 0; i < dim.x; ++i) {
+		for(int j = 0; j < dim.z; ++j) {
 			addWalls(grid[i][j]);
 		}
 	}
 
 //Add the north bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * size.x));
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * dim.x));
 	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * size.x, 0, 2 * mazeNS::CELL_WIDTH * size.z));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, 0, 2 * mazeNS::CELL_WIDTH * dim.z));
 	++wallsConstructed;
 
 //Add the east bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * size.z));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(0, 0, mazeNS::CELL_WIDTH * size.z));
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(0, 0, mazeNS::CELL_WIDTH * dim.z));
 	++wallsConstructed;
 
 //Add the south bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * size.x));
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_LENGTH * dim.x));
 	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, ToRadian(90), 0));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * size.x, 0, 0));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, 0, 0));
 	++wallsConstructed;
 
 //Add the west bounding wall
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * size.z));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(2 * mazeNS::CELL_LENGTH * size.x, 0, mazeNS::CELL_WIDTH * size.z));
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(2 * mazeNS::CELL_LENGTH * dim.x, 0, mazeNS::CELL_WIDTH * dim.z));
 	++wallsConstructed;
 
 //Add the floor
-	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * size.x, mazeNS::CELL_WIDTH * size.z));
+	walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * dim.x, mazeNS::CELL_WIDTH * dim.z));
 	walls[wallsConstructed].setRotation(D3DXVECTOR3(0, 0, ToRadian(90)));
-	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * size.x, -mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * size.z));
+	walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, -mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
 	++wallsConstructed;
 
 //Add the ceiling
-	//walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * size.x, mazeNS::CELL_WIDTH * size.z));
+	//walls[wallsConstructed].setScale(D3DXVECTOR3(mazeNS::WALL_THICK, mazeNS::CELL_LENGTH * dim.x, mazeNS::CELL_WIDTH * dim.z));
 	//walls[wallsConstructed].setRotation(D3DXVECTOR3(0, 0, ToRadian(90)));
-	//walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * size.x, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * size.z));
+	//walls[wallsConstructed].setPosition(D3DXVECTOR3(mazeNS::CELL_LENGTH * dim.x, mazeNS::WALL_HEIGHT, mazeNS::CELL_WIDTH * dim.z));
 	//++wallsConstructed;
 }
 
 Location Maze::cellToPx(Location cell) {
 //Ensure this request is not out of bounds
-	if (cell.x >= size.x || cell.z >= size.z) {
+	if (cell.x >= dim.x || cell.z >= dim.z || cell.x < 0 || cell.z < 0) {
 		Location loc = {-1, -1};
 		return loc;
 	}
 
 //Calculate the grid location
 	Location loc;
-	loc.x = (mazeNS::CELL_LENGTH / 2.0f) + (cell.x * mazeNS::CELL_LENGTH);
-	loc.z = (mazeNS::CELL_WIDTH / 2.0f) + (cell.z * mazeNS::CELL_WIDTH);
+	loc.x = 2 * ((mazeNS::CELL_LENGTH / 2.0f) + (cell.x * mazeNS::CELL_LENGTH));
+	loc.z = 2 * ((mazeNS::CELL_WIDTH / 2.0f) + (cell.z * mazeNS::CELL_WIDTH));
 	return loc;
 }
 
 bool Maze::collided(Location px) {
+	#ifdef DEBUG_ENABLED
+	//Debug output
+		wchar_t xLoc[10], zLoc[10];
+		_itow_s(px.x, xLoc, 10);
+		_itow_s(px.z, zLoc, 10);
+	
+		OutputDebugString(L"Checking collision at location: (");
+		OutputDebugString(xLoc);
+		OutputDebugString(L", ");
+		OutputDebugString(zLoc);
+		OutputDebugString(L")\n");
+	#endif
+
 //Get the cell grid location
 	Location cell = pxToCell(px);
+
+	if (cell.x == -1) return true;
+
+	#ifdef DEBUG_ENABLED
+	//Debug output
+		_itow_s(cell.x, xLoc, 10);
+		_itow_s(cell.z, zLoc, 10);
+	
+		OutputDebugString(L"Location resolves to cell: (");
+		OutputDebugString(xLoc);
+		OutputDebugString(L", ");
+		OutputDebugString(zLoc);
+		OutputDebugString(L")\n");
+	#endif
 
 //Get the cell center
 	Location center = cellToPx(cell);
 
-//Is this location valid?
-	if (cell.x == -1) return true;
+	if (center.x == -1) return true;
+
+	#ifdef DEBUG_ENABLED
+	//Debug output
+		_itow_s(center.x, xLoc, 10);
+		_itow_s(center.z, zLoc, 10);
+	
+		OutputDebugString(L"Center of current cell: (");
+		OutputDebugString(xLoc);
+		OutputDebugString(L", ");
+		OutputDebugString(zLoc);
+		OutputDebugString(L")\n");
+	#endif
 
 //Get the cell data
 	Borders borders;
 	Node *location = grid[cell.x][cell.z];
 
+/**
+ * Note that CELL_LENGTH and CELL_WIDTH are not divided by two
+ * since the unit length of a cube is 2x2x2, and the maze class
+ *(correctly) provides and interface assuming that cubes are
+ * 1x1x1.
+*/
+
 //North wall boundaries
 	if (location->children.north == NULL) {
-		borders.north->farDim = center.z + (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_WIDTH / 2.0f);
-		borders.north->nearDim = center.z + (mazeNS::CELL_WIDTH / 2.0f - mazeNS::CELL_PAD);
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			OutputDebugString(L"Checking northern boundary... \n");
+		#endif
 
-		if (px.z <= borders.north->farDim & px.z >= borders.north->nearDim) return true;
+		borders.north.farDim = center.z + mazeNS::CELL_WIDTH;
+		borders.north.nearDim = center.z + mazeNS::CELL_WIDTH - (mazeNS::CELL_PAD * 2);
+
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			_itow_s(borders.north.nearDim, xLoc, 10);
+			_itow_s(borders.north.farDim, zLoc, 10);
+	
+			OutputDebugString(L"Near: ");
+			OutputDebugString(xLoc);
+			OutputDebugString(L", Far: ");
+			OutputDebugString(zLoc);
+			OutputDebugString(L"\n");
+		#endif
+
+		if (px.z <= borders.north.farDim && px.z >= borders.north.nearDim) {
+			#ifdef DEBUG_ENABLED
+			//Debug output
+				OutputDebugString(L"   COLLIDED WITH NORTH\n");
+			#endif
+
+			return true;
+		}
 	}
 
 //East wall boundaries
 	if (location->children.east == NULL) {
-		borders.north->farDim = center.x + (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_LENGTH / 2.0f);
-		borders.north->nearDim = center.x + (mazeNS::CELL_LENGTH / 2.0f - mazeNS::CELL_PAD);
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			OutputDebugString(L"Checking eastern boundary... \n");
+		#endif
 
-		if (px.x <= borders.north->farDim & px.x >= borders.north->nearDim) return true;
+		borders.east.farDim = center.x + mazeNS::CELL_LENGTH;
+		borders.east.nearDim = center.x + mazeNS::CELL_LENGTH - (mazeNS::CELL_PAD * 2);
+
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			_itow_s(borders.east.nearDim, xLoc, 10);
+			_itow_s(borders.east.farDim, zLoc, 10);
+	
+			OutputDebugString(L"Near: ");
+			OutputDebugString(xLoc);
+			OutputDebugString(L", Far: ");
+			OutputDebugString(zLoc);
+			OutputDebugString(L"\n");
+		#endif
+
+		if (px.x <= borders.east.farDim && px.x >= borders.east.nearDim) {
+			#ifdef DEBUG_ENABLED
+			//Debug output
+				OutputDebugString(L"   COLLIDED WITH EAST\n");
+			#endif
+
+			return true;
+		}
 	}
 
 //South wall boundaries
 	if (location->children.south == NULL) {
-		borders.south->farDim = center.z - (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_WIDTH / 2.0f);
-		borders.south->nearDim = center.z - (mazeNS::CELL_WIDTH / 2.0f - mazeNS::CELL_PAD);
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			OutputDebugString(L"Checking southern boundary... \n");
+		#endif
 
-		if (px.z >= borders.north->farDim & px.z <= borders.north->nearDim) return true;
+		borders.south.farDim = center.z - mazeNS::CELL_WIDTH;
+		borders.south.nearDim = center.z - mazeNS::CELL_WIDTH + (mazeNS::CELL_PAD * 2);
+
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			_itow_s(borders.south.nearDim, xLoc, 10);
+			_itow_s(borders.south.farDim, zLoc, 10);
+	
+			OutputDebugString(L"Near: ");
+			OutputDebugString(xLoc);
+			OutputDebugString(L", Far: ");
+			OutputDebugString(zLoc);
+			OutputDebugString(L"\n");
+		#endif
+
+		if (px.z >= borders.south.farDim && px.z <= borders.south.nearDim) {
+			#ifdef DEBUG_ENABLED
+			//Debug output
+				OutputDebugString(L"   COLLIDED WITH SOUTH\n");
+			#endif
+
+			return true;
+		}
 	}
 
 //West wall boundaries
-	if (location->children.east == NULL) {
-		borders.north->farDim = center.x - (mazeNS::WALL_THICK / 2.0f + mazeNS::CELL_LENGTH / 2.0f);
-		borders.north->nearDim = center.x - (mazeNS::CELL_LENGTH / 2.0f - mazeNS::CELL_PAD);
+	if (location->children.west == NULL) {
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			OutputDebugString(L"Checking western boundary... \n");
+		#endif
 
-		if (px.x >= borders.north->farDim & px.x <= borders.north->nearDim) return true;
+		borders.west.farDim = center.x - mazeNS::CELL_LENGTH;
+		borders.west.nearDim = center.x - mazeNS::CELL_LENGTH + (mazeNS::CELL_PAD * 2);
+
+		#ifdef DEBUG_ENABLED
+		//Debug output
+			_itow_s(borders.west.nearDim, xLoc, 10);
+			_itow_s(borders.west.farDim, zLoc, 10);
+	
+			OutputDebugString(L"Near: ");
+			OutputDebugString(xLoc);
+			OutputDebugString(L", Far: ");
+			OutputDebugString(zLoc);
+			OutputDebugString(L"\n");
+		#endif
+
+		if (px.x >= borders.west.farDim && px.x <= borders.west.nearDim) {
+			#ifdef DEBUG_ENABLED
+			//Debug output
+				OutputDebugString(L"   COLLIDED WITH WEST\n");
+			#endif
+
+			return true;
+		}
 	}
+
+	#ifdef DEBUG_ENABLED
+	//Debug output
+		OutputDebugString(L"NO COLLISION\n\n");
+	#endif
 
 	return false;
 }
@@ -391,7 +537,7 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 				loc.x = currentCell->location.x + 1;
 				loc.z = currentCell->location.z;
 				
-				if (loc.x < size.x) {
+				if (loc.x < dim.x) {
 					operable = grid[loc.x][loc.z];
 				}
 				
@@ -401,7 +547,7 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 				loc.x = currentCell->location.x;
 				loc.z = currentCell->location.z + 1;
 
-				if (loc.z < size.z) {
+				if (loc.z < dim.z) {
 					operable = grid[loc.x][loc.z];
 				}
 				
@@ -433,13 +579,14 @@ Node *Maze::inaccessableSiblingCell(Node *currentCell) {
 	return NULL;
 }
 
-void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice)
-{
+void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice) {
 //Set up the random generator
 	srand(time(NULL));
 
 //Set up the maze size and DFS algorithm
-	size = dim;
+	this->dim = dim;
+	size.x = 2 * dim.x * mazeNS::CELL_LENGTH;
+	size.z = 2 * dim.z * mazeNS::CELL_WIDTH;
 	totalCells = dim.x * dim.z;
 	visited = 1;
 
@@ -493,20 +640,16 @@ void Maze::init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10Effe
 }
 
 Location Maze::pxToCell(Location px) {
-	Dimension dim;
-	dim.x = size.x * mazeNS::CELL_LENGTH;
-	dim.z = size.z * mazeNS::CELL_WIDTH;
-
 //Ensure this request is not out of bounds
-	if (px.x >= dim.x || px.z >= dim.z) {
+	if (px.x >= size.x || px.z >= size.z || px.x <= 0 || px.z <= 0) {
 		Location loc = {-1, -1};
 		return loc;
 	}
 
 //Calculate the cell position
 	Location loc;
-	loc.x = floor((double)((px.x * size.x) / dim.x));
-	loc.z = floor((double)((px.z * size.z) / dim.z));
+	loc.x = floor(static_cast<double>(px.x / (2 * mazeNS::CELL_LENGTH)));
+	loc.z = floor(static_cast<double>(px.z / (2 * mazeNS::CELL_WIDTH)));
 
 	return loc;
 }
@@ -516,11 +659,9 @@ void Maze::setStartPosition(Location location) {
 	root = grid[location.x][location.z];
 }
 
-void Maze::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
-{
-	for(int i = 0; i < wallsConstructed; i++)
-	{
-		walls[wallsConstructed].setTex(diffuseLoc,specLoc,diffuseMap,specMap);
+void Maze::setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap) {
+	for(int i = 0; i < wallsConstructed; ++i) {
+		walls[wallsConstructed].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
 	}
 }
 

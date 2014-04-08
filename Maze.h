@@ -24,23 +24,20 @@ namespace mazeNS {
 }
 
 enum Direction { NORTH, EAST, SOUTH, WEST };
-
-struct Boundaries;
 struct Node;
 
-struct Borders {
-	Borders() { east = NULL; north = NULL; south = NULL; west = NULL; }
-	~Borders() { delete east; delete north; delete south; delete west; }
-
-	Boundaries *east;
-	Boundaries *north;
-	Boundaries *south;
-	Boundaries *west;
-};
-
 struct Boundaries {
+	Boundaries() { }
+
 	float farDim;
 	float nearDim;
+};
+
+struct Borders {
+	Boundaries east;
+	Boundaries north;
+	Boundaries south;
+	Boundaries west;
 };
 
 struct Intersection {
@@ -109,6 +106,7 @@ private :
 	vector<GameObject> walls;
 
 private : 
+	Dimension dim;
 	Location end;
 	Dimension size;
 	Location start;
