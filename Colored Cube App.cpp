@@ -52,7 +52,7 @@ private:
 	void buildVertexLayouts();
  
 private:
-	Audio* audio;
+	//Audio* audio;
 	playerControls camera;
 	Light lights[4];
 	LightObject lightObject1;
@@ -65,7 +65,7 @@ private:
 
 	D3DXCOLOR ambientLight,hurtLight;
 
-	SoundItem* testSound;
+	//SoundItem* testSound;
 
 	GameObject player;
 	//GameObject floor,wall1,wall2,wall3,wall4;
@@ -170,12 +170,12 @@ ColoredCubeApp::~ColoredCubeApp()
 	if( md3dDevice )
 		md3dDevice->ClearState();
 
-	delete audio;
+	//delete audio;
 	//delete input;
 
 	ReleaseCOM(mFX);
 	ReleaseCOM(mVertexLayout);
-	delete testSound;
+	//delete testSound;
 }
 
 void ColoredCubeApp::initApp()
@@ -262,18 +262,18 @@ void ColoredCubeApp::initApp()
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
-    audio = new Audio();
-    if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
-    {
-        if( FAILED( hr = audio->initialize() ) )
-        {
-			exit(1);
-            //if( hr == HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND ) )
-            //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system because media file not found."));
-            //else
-            //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
-        }
-    }
+   // audio = new Audio();
+   // if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
+   // {
+   //     if( FAILED( hr = audio->initialize() ) )
+   //     {
+			//exit(1);
+   //         //if( hr == HRESULT_FROM_WIN32( ERROR_FILE_NOT_FOUND ) )
+   //         //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system because media file not found."));
+   //         //else
+   //         //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
+   //     }
+   // }
 	//set up the camera
 	camera.setHeightAndWidth(mClientWidth,mClientHeight);
 
@@ -281,9 +281,9 @@ void ColoredCubeApp::initApp()
 
 	//input->initialize(this->getMainWnd(), false);  
 	//sound object
-	testSound = new SoundItem(audio,Vector3(0,0,0),50);
+	/*testSound = new SoundItem(audio,Vector3(0,0,0),50);
 	static string sounds[] = {"gun_sound_effect","Light Bulb Breaking-SoundBible.com-53066515"};
-	testSound->setSounds(sounds,2);
+	testSound->setSounds(sounds,2);*/
 }
 
 void ColoredCubeApp::onResize()
@@ -414,9 +414,9 @@ void ColoredCubeApp::updateScene(float dt)
 	//D3DXVec3Normalize(&mParallelLight.dir, &(playerCamera.getTarget()-testCube.getPosition()));
 
 	outs.precision(2);
-    outs << L"Time: " << timer << L"\n";
+	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
-	outs << "Score: " << score;
+	outs << "Battery: " << flashLightObject.getPowerLevel();
 	mTimer = outs.str();
 }
 
