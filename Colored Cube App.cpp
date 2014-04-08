@@ -54,7 +54,7 @@ private:
 private:
 	//Audio* audio;
 	playerControls camera;
-	Light lights[4];
+	Light lights[12];
 	LightObject lightObject1;
 	//Input* input;
 	float score;
@@ -154,10 +154,10 @@ Vector3 ColoredCubeApp::moveCube()
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
-  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(10,5,50,50)
+  mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(3,10,50,50)
 {
 	player.setHealth(10);
-	numLights=4;
+	numLights=5;
 	prevLightType = 0;
 	score = 0;
 	timer = 30;
@@ -217,7 +217,6 @@ void ColoredCubeApp::initApp()
 	lights[1].dir = D3DXVECTOR3(0, -1, 0);	
 	lights[1].lightType.x = 0;
 
-	numLights = 3;
 
 	buildFX();
 	buildVertexLayouts();
@@ -250,7 +249,7 @@ void ColoredCubeApp::initApp()
 	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
 	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));*/
 
-	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(1,1,1));
 	player.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
@@ -261,6 +260,7 @@ void ColoredCubeApp::initApp()
 
 	batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
+	ghosts.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
@@ -314,14 +314,15 @@ void ColoredCubeApp::updateScene(float dt)
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
 	//collision detection
-	/*if(testCube.getPosition()!=oldP)
+	if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
 		{
-			testCube.setPosition(oldP);
-			testCube.update(dt);
+			player.setPosition(oldP);
+			player.setVelocity(Vector3(0,0,0));
+			player.update(dt);
 		}
-	}*/
+	}
 
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
 	{
@@ -445,7 +446,11 @@ void ColoredCubeApp::drawScene()
 
 	// set the light array
 	lights[0] = flashLightObject.lightSource;
-	lights[2] = lightObject1.getLight();
+	//lights[2] = lightObject1.getLight();
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		lights[2+i] = ghosts.getEnemies()[i].getLight();
+	}
 
 	mfxLightVar->SetRawValue(&lights[0], 0, numLights*sizeof(Light));
  
@@ -469,7 +474,7 @@ void ColoredCubeApp::drawScene()
 	
 	batteryObject.draw(mView,mProj,mTechColor2);
 	player.draw(mView,mProj,mTechColor2);
-	ghosts.draw(mView,mProj,mTechColor2);
+	ghosts.draw(mView,mProj,mTech);
 
 	/*floor.draw(mView, mProj, mTech);
 	wall1.draw(mView, mProj, mTech);

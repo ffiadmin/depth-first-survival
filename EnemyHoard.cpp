@@ -58,3 +58,11 @@ void EnemyHoard::update(float dt,GameObject* player)
 		enemies[i].update(dt,player);
 	}
 }
+
+void EnemyHoard::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
+{
+	for(int i = 0; i < numEnemies; i++)
+	{
+		enemies[i].setTex(diffuseLoc,specLoc,diffuseMap,specMap);
+	}
+}
