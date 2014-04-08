@@ -5,7 +5,7 @@ void BatteryObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID
 	battery.init(device,1,"battery.txt");
 	GameObject::init(&battery,fx,fx2,r,pos,vel,sp,s);
 	startY = pos.y;
-	hoverDistance = 0.25;
+	hoverDistance = 0.5;
 	hoverChange = .0025;
 }
 

@@ -285,12 +285,12 @@ void ColoredCubeApp::initApp()
 	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	for(int i = 0; i < numBatteries; i++)
 	{
-		batteries[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+		batteries[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.5,0.5,0.5));
 		Location l;
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
 		auto spot = maze.cellToPx(l);
-		batteries[i].setPosition(Vector3(spot.x,2,spot.z));
+		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
@@ -366,6 +366,11 @@ void ColoredCubeApp::updateScene(float dt)
 	for(int i = 0; i < numBatteries; i++)
 	{
 		batteries[i].update(dt);
+		if(player.collided(&batteries[i]))
+		{
+			batteries[i].setInActive();
+			flashLightObject.getBattery();
+		}
 	}
 
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)

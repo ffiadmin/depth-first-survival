@@ -65,7 +65,7 @@ void FlashLightObject::getBattery()
 {
 	timer = 0;
 	lightSource.diffuse = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-	powerLevel = (int)(1.0f/powerLossValue);
+	powerLevel = (int)ceil((1.0f/powerLossValue));
 }
 
 void FlashLightObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx, ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
