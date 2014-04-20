@@ -47,13 +47,26 @@ public:
 	void updateScene(float dt);
 	void drawScene(); 
 	void updateGameState();
-	void reloadLevel();
+	void reloadLevel(int x, int z);
 
 private:
 	void buildFX();
 	void buildVertexLayouts();
  
 private:
+	void updateTitle(float dt);
+	void updateControls(float dt);
+	void updateL1(float dt);
+	void updateL2(float dt);
+	void updateLose(float dt);
+	void updateWin(float dt);
+	void drawTitle();
+	void drawControls();
+	void drawL1();
+	void drawL2();
+	void drawLose();
+	void drawWin();
+
 	Gamestates gamestate;
 	Audio* audio;
 	playerControls camera;
@@ -69,7 +82,6 @@ private:
 
 	bool goal;
 	int currentKeys, totalKeys;
-
 
 	D3DXCOLOR ambientLight,hurtLight;
 
@@ -185,7 +197,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	onceAgainEnd = true;
 	goal = false;
 	currentKeys = 0;
-	totalKeys = 1;
+	totalKeys = 10;
 	numLightObjects = 5;
 	numBatteries = 20;
 	player.setHealth(10);
@@ -379,240 +391,50 @@ void ColoredCubeApp::onResize()
 void ColoredCubeApp::updateScene(float dt)
 {
 	updateGameState();
-	if(gamestate == title)
+	if(player.getHealth()<=0)
 	{
-		float rad = 0.0f;
-		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+		gamestate = gameover;
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
 		maze.update(dt);
-		if(once)
-		{
-			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Title Screen.jpg",L"brickwork-bump-map.jpg");
-			once = false;
-		}
-		ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-		//set ceiling texture here
 	}
-	if(gamestate == controls)
+
+	endCube.update(dt);
+
+	for(int i = 0; i < numLightObjects; i++)
 	{
-		float rad = 0.0f;
-		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
-		maze.update(dt);
-		if(onceAgain)
-		{
-			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
-			onceAgain = false;
-		}
-		ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-		//set ceiling texture here
+		lamps[i].update(dt);
 	}
-	if(gamestate == level1 || gamestate == level2)
+
+	for(int i = 0; i < numBatteries; i++)
 	{
-		ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
-		if(onceAgainStart)
+		batteries[i].update(dt);
+		if(player.collided(&batteries[i]))
 		{
-			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
-			onceAgainStart = false;
-		}
-		if(GetAsyncKeyState('Y') & 0x8000)
-			perspective = true;
-		else
-			perspective = false;
-		if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
-		{
-			audio->playCue(BATTERY_DIE);
-		}
-		oldBLevel = flashLightObject.getPowerLevel();
-		//check for win game conditions	
-		auto oldP = player.getPosition();
-		timer -= dt;
-		std::wostringstream outs; 
-		//update the camera
-		camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
-		//move the player
-		camera.movePlayer(player,30,camera.getTarget(),perspective);
-		player.update(dt);
-		Location playerLoc;
-		playerLoc.x = player.getPosition().x;
-		playerLoc.z = player.getPosition().z;
-		//collision detection
-		if(player.getPosition()!=oldP)
-		{
-			if(maze.collided(playerLoc))
-			{
-				player.setPosition(oldP);
-				player.setVelocity(Vector3(0,0,0));
-				player.update(dt);
-			}
-		}
-
-		for(int i = 0; i < numLightObjects; i++)
-		{
-			lamps[i].update(dt);
-		}
-
-		for(int i = 0; i < numBatteries; i++)
-		{
-			batteries[i].update(dt);
-			if(player.collided(&batteries[i]))
-			{
-				batteries[i].setInActive();
-				flashLightObject.getBattery();
-				audio->playCue(BATTERY_CHARGE);
-			}
-		}
-
-		if(gamestate == level1)
-		{
-			for(int i = 0; i < totalKeys; i++)
-			{
-				keyObject[i].update(dt);
-				if(player.collided(&keyObject[i]))
-				{
-					currentKeys++;
-					keyObject[i].setInActive();
-					audio->playCue(ITEM);
-				}
-			}
-		}
-
-		if(gamestate==level2)
-		{
-			for(int i = 0; i < ghosts.getNumEnemies(); i++)
-			{
-				if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
-				{
-					ghosts.getEnemies()[i].decreaseHealth();
-					audio->playCue(G_HIT);
-				}
-			}
-		}
-
-		if(gamestate==level2)
-		{
-			if(player.collided(&endCube))
-			{
-				gamestate = win;
-				maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Win.jpg",L"brickwork-bump-map.jpg");
-				maze.update(dt);
-			}
-		}
-
-		if(player.getHealth()<=0)
-		{
-			gamestate = gameover;
-			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
-			maze.update(dt);
-		}
-
-		endCube.update(dt);
-
-		lights[1].ambient = ambientLight;
-		if(gamestate == level2)
-		{
-			for(int i = 0; i < ghosts.getNumEnemies(); i++)
-			{
-				//player gets hit by a ghost
-				if(player.collided(&ghosts.getEnemies()[i]))
-				{
-					player.setHealth(player.getHealth()-1);
-					lights[1].ambient = hurtLight;
-					//make flash take longer
-					ghosts.getEnemies()[i].setInActive();
-					audio->playCue(P_HIT);
-				}
-			}
-		}
-
-		maze.update(dt);
-	
-
-		if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
-		{
-			flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
-			int i = 0;
-		}
-
-		//orientating the flashlight
-		if(flashLightObject.lightSource.dir!=camera.getTarget())
-		{
-			//vectors for caluclating z-rotation
-			Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
-			Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
-			//vectors for calculating y-rotation
-			Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
-			Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
-			//vectors for calculating x-rotation
-			Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
-			Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
-
-			float xAngle = flashLightObject.getRotation().x;
-			float yAngle = flashLightObject.getRotation().y;
-			float zAngle = flashLightObject.getRotation().z;
-			float topEquation;
-			float bottomEquation;
-
-			topEquation = Dot2(&cameraXY,&startXY);
-			bottomEquation = Length2(&cameraXY)*Length2(&startXY);
-			if(bottomEquation>0)
-			{
-				zAngle+=acos((topEquation/bottomEquation));
-			}
-
-			topEquation = Dot2(&cameraXZ,&startXZ);
-			bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
-			if(bottomEquation>0)
-			{
-				yAngle+=acos((topEquation/bottomEquation));
-			}
-
-			topEquation = Dot2(&cameraYZ,&startYZ);
-			bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
-			if(bottomEquation>0)
-			{
-				xAngle+=acos((topEquation/bottomEquation));
-			}
-
-			flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
-			flashLightObject.lightSource.dir = camera.getTarget();
-		}
-
-		flashLightObject.update(dt);
-		//batteryObject.update(dt);
-		ghosts.update(dt,&player);
-		//lightObject1.update(dt);
-		/*floor.update(dt);
-		wall1.update(dt);
-		wall2.update(dt);
-		wall3.update(dt);
-		wall4.update(dt);*/
-
-		//flashLightObject.setRotation(
-
-		/*if(player.collided(&batteryObject))
-		{
+			batteries[i].setInActive();
 			flashLightObject.getBattery();
-		}*/
-		//mParallelLight.pos = testCube.getPosition();
-		//set up the flashlight light direction based on the direction the geometry is pointing
-		//D3DXVec3Normalize(&mParallelLight.dir, &(playerCamera.getTarget()-testCube.getPosition()));
-
-		outs.precision(2);
-		outs << L"Health: " << player.getHealth() << L"\n";
-		outs.precision(3);
-		outs << "Battery: " << flashLightObject.getPowerLevel();
-		mTimer = outs.str();
-	}
-	if(gamestate == gameover)
-	{
-		float rad = 0.0f;
-		camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
-		//set ceiling texture here
-		if(onceAgainEnd)
-		{
-			maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
-			onceAgainEnd = false;
-			onceAgainStart = true;
+			audio->playCue(BATTERY_CHARGE);
 		}
+	}
+	switch(gamestate)
+	{
+	case title:
+		updateTitle(dt);
+		break;
+	case controls:
+		updateControls(dt);
+		break;
+	case level1:
+		updateL1(dt);
+		break;
+	case level2:
+		updateL2(dt);
+		break;
+	case gameover:
+		updateLose(dt);
+		break;
+	case win:
+		updateWin(dt);
+		break;
 	}
 }
 
@@ -695,17 +517,335 @@ void ColoredCubeApp::drawScene()
 	//player.draw(mView,mProj,mTechColor2);
 	ghosts.draw(mView,mProj,mTech);
 
-	/*floor.draw(mView, mProj, mTech);
-	wall1.draw(mView, mProj, mTech);
-	wall2.draw(mView, mProj, mTech);
-	wall3.draw(mView, mProj, mTech);
-	wall4.draw(mView, mProj, mTech);*/
-	//lightObject1.draw(mView,mProj,mTech);
-
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
 	mFont->DrawText(0, mTimer.c_str(), -1, &R, DT_NOCLIP, BLUE);
 	mSwapChain->Present(0, 0);
+}
+
+void ColoredCubeApp::updateTitle(float dt)
+{
+	float rad = 0.0f;
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	maze.update(dt);
+	if(once)
+	{
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Title Screen.jpg",L"brickwork-bump-map.jpg");
+		once = false;
+	}
+	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	//set ceiling texture here
+}
+
+void ColoredCubeApp::updateControls(float dt)
+{
+	float rad = 0.0f;
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	maze.update(dt);
+	if(onceAgain)
+	{
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
+		onceAgain = false;
+	}
+	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	//set ceiling texture here
+}
+
+void ColoredCubeApp::updateL1(float dt)
+{
+	if(onceAgainStart)
+	{
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
+		onceAgainStart = false;
+	}
+	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+		
+	if(GetAsyncKeyState('Y') & 0x8000)
+		perspective = true;
+	else
+		perspective = false;
+	//detect battery level
+	//maybe give gameObjects an audio pointer so they can play cues when necessary...
+	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
+	{
+		audio->playCue(BATTERY_DIE);
+	}
+	oldBLevel = flashLightObject.getPowerLevel();
+	auto oldP = player.getPosition();
+	timer -= dt;
+	std::wostringstream outs; 
+	//update the camera
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
+	//move the player
+	camera.movePlayer(player,30,camera.getTarget(),perspective);
+	player.update(dt);
+	Location playerLoc;
+	playerLoc.x = player.getPosition().x;
+	playerLoc.z = player.getPosition().z;
+	//collision detection
+	if(player.getPosition()!=oldP)
+	{
+		if(maze.collided(playerLoc))
+		{
+			player.setPosition(oldP);
+			player.setVelocity(Vector3(0,0,0));
+			player.update(dt);
+		}
+	}
+	flashLightObject.update(dt);
+	
+	maze.update(dt);
+	
+	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
+	{
+		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
+		int i = 0;
+	}
+
+	//orientating the flashlight
+	if(flashLightObject.lightSource.dir!=camera.getTarget())
+	{
+		//vectors for caluclating z-rotation
+		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
+		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
+		//vectors for calculating y-rotation
+		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
+		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
+		//vectors for calculating x-rotation
+		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
+		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
+
+		float xAngle = flashLightObject.getRotation().x;
+		float yAngle = flashLightObject.getRotation().y;
+		float zAngle = flashLightObject.getRotation().z;
+		float topEquation;
+		float bottomEquation;
+
+		topEquation = Dot2(&cameraXY,&startXY);
+		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
+		if(bottomEquation>0)
+		{
+			zAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraXZ,&startXZ);
+		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
+		if(bottomEquation>0)
+		{
+			yAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraYZ,&startYZ);
+		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
+		if(bottomEquation>0)
+		{
+			xAngle+=acos((topEquation/bottomEquation));
+		}
+
+		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
+		flashLightObject.lightSource.dir = camera.getTarget();
+	}
+
+	outs.precision(2);
+	outs << L"Health: " << player.getHealth() << L"\n";
+	outs.precision(3);
+	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nKeys Remaining: " << (totalKeys-currentKeys);
+	mTimer = outs.str();
+
+	for(int i = 0; i < totalKeys; i++)
+	{
+		keyObject[i].update(dt);
+		if(player.collided(&keyObject[i]))
+		{
+			currentKeys++;
+			keyObject[i].setInActive();
+			audio->playCue(ITEM);
+		}
+	}
+}
+
+void ColoredCubeApp::updateL2(float dt)
+{
+	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+		
+	if(GetAsyncKeyState('Y') & 0x8000)
+		perspective = true;
+	else
+		perspective = false;
+	//detect battery level
+	//maybe give gameObjects an audio pointer so they can play cues when necessary...
+	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
+	{
+		audio->playCue(BATTERY_DIE);
+	}
+	oldBLevel = flashLightObject.getPowerLevel();
+	auto oldP = player.getPosition();
+	timer -= dt;
+	std::wostringstream outs; 
+	//update the camera
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
+	//move the player
+	camera.movePlayer(player,30,camera.getTarget(),perspective);
+	player.update(dt);
+	Location playerLoc;
+	playerLoc.x = player.getPosition().x;
+	playerLoc.z = player.getPosition().z;
+	//collision detection
+	if(player.getPosition()!=oldP)
+	{
+		if(maze.collided(playerLoc))
+		{
+			player.setPosition(oldP);
+			player.setVelocity(Vector3(0,0,0));
+			player.update(dt);
+		}
+	}
+	flashLightObject.update(dt);
+		
+	maze.update(dt);
+	
+	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
+	{
+		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
+		int i = 0;
+	}
+
+	//orientating the flashlight
+	if(flashLightObject.lightSource.dir!=camera.getTarget())
+	{
+		//vectors for caluclating z-rotation
+		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
+		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
+		//vectors for calculating y-rotation
+		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
+		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
+		//vectors for calculating x-rotation
+		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
+		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
+
+		float xAngle = flashLightObject.getRotation().x;
+		float yAngle = flashLightObject.getRotation().y;
+		float zAngle = flashLightObject.getRotation().z;
+		float topEquation;
+		float bottomEquation;
+
+		topEquation = Dot2(&cameraXY,&startXY);
+		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
+		if(bottomEquation>0)
+		{
+			zAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraXZ,&startXZ);
+		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
+		if(bottomEquation>0)
+		{
+			yAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraYZ,&startYZ);
+		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
+		if(bottomEquation>0)
+		{
+			xAngle+=acos((topEquation/bottomEquation));
+		}
+
+		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
+		flashLightObject.lightSource.dir = camera.getTarget();
+	}
+
+	outs.precision(2);
+	outs << L"Health: " << player.getHealth() << L"\n";
+	outs.precision(3);
+	outs << "Battery: " << flashLightObject.getPowerLevel();
+	mTimer = outs.str();
+
+	ghosts.update(dt,&player);
+	//ghost collision detection
+	lights[1].ambient = ambientLight;
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		//player gets hit by a ghost
+		if(player.collided(&ghosts.getEnemies()[i]))
+		{
+			player.setHealth(player.getHealth()-1);
+			lights[1].ambient = hurtLight;
+			//make flash take longer
+			ghosts.getEnemies()[i].setInActive();
+			audio->playCue(P_HIT);
+		}
+	}
+	//flashlight ghost attack
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+		{
+			ghosts.getEnemies()[i].decreaseHealth();
+			audio->playCue(G_HIT);
+		}
+	}
+	//win scenario
+	if(player.collided(&endCube))
+	{
+		goal = true;
+	}
+}
+
+void ColoredCubeApp::updateLose(float dt)
+{
+	float rad = 0.0f;
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	//set ceiling texture here
+	if(onceAgainEnd)
+	{
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
+		onceAgainEnd = false;
+		onceAgainStart = true;
+	}
+}
+
+void ColoredCubeApp::updateWin(float dt)
+{
+	float rad = 0.0f;
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	//set ceiling texture here
+	if(onceAgainEnd)
+	{
+		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Win.jpg",L"brickwork-bump-map.jpg");
+		onceAgainEnd = false;
+		onceAgainStart = true;
+	}
+}
+
+void ColoredCubeApp::drawTitle()
+{
+
+}
+
+void ColoredCubeApp::drawControls()
+{
+
+}
+
+void ColoredCubeApp::drawL1()
+{
+
+}
+
+void ColoredCubeApp::drawL2()
+{
+
+}
+
+void ColoredCubeApp::drawLose()
+{
+
+}
+
+void ColoredCubeApp::drawWin()
+{
+
 }
 
 void ColoredCubeApp::buildFX()
@@ -774,10 +914,10 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = level1;
        }
-       if(gamestate == level1 && (currentKeys==totalKeys))
+       if(gamestate == level1 && (currentKeys==totalKeys||(GetAsyncKeyState('P') & 0x8000)))
        {
               gamestate = level2;
-			  reloadLevel();
+			  reloadLevel(20,20);
        }
        if(gamestate == level2 && goal)
        {
@@ -787,22 +927,25 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = gameover;
        }
-       if((gamestate == gameover ||gamestate==win)&& (GetAsyncKeyState('E') & 0x8000))
+       if((gamestate == gameover ||gamestate==win))//&& (GetAsyncKeyState('P') & 0x8000))
        {
               gamestate = title;
+			  reloadLevel(10,10);
+			  goal = false;
        }
 }
 
- void ColoredCubeApp::reloadLevel()
+ void ColoredCubeApp::reloadLevel(int x, int z)
 {
 	currentKeys = 0;
 	flashLightObject.getBattery();
 	//add in the maze reset function
 	Dimension d;
-	d.x=20;
-	d.z = 20;
+	d.x=x;
+	d.z = z;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
+
 	/*maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
 	maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
 	maze.setFloorTex(mfxDiffuseMapVar,mfxSpecMapVar,L"carpet_diffuse.jpg",L"brickwork-bump-map.jpg");*/
