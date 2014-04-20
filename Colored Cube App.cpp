@@ -135,6 +135,20 @@ private:
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
 	ID3D10EffectScalarVariable* mfxNumLights;
 
+	//textures and spec maps
+	ID3D10ShaderResourceView* brickTexture;
+	ID3D10ShaderResourceView* boxTexture;
+	ID3D10ShaderResourceView* titleTexture;
+	ID3D10ShaderResourceView* controlTexture;
+	ID3D10ShaderResourceView* winScreenTexture;
+	ID3D10ShaderResourceView* loseScreenTexture;
+	ID3D10ShaderResourceView* floorTexture;
+	ID3D10ShaderResourceView* ceilingTexture;
+
+	ID3D10ShaderResourceView* standardSpecMap;
+	ID3D10ShaderResourceView* brickSpecMap;
+	ID3D10ShaderResourceView* iceSpecMap;
+
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 	D3DXMATRIX mWVP;
@@ -221,6 +235,19 @@ ColoredCubeApp::~ColoredCubeApp()
 	//delete audio;
 	//delete input;
 
+	brickTexture->Release();
+	boxTexture->Release();
+	titleTexture->Release();
+	controlTexture->Release();
+	winScreenTexture->Release();
+	loseScreenTexture->Release();
+	floorTexture->Release();
+	ceilingTexture->Release();
+
+	standardSpecMap->Release();
+	brickSpecMap->Release();
+	iceSpecMap->Release();
+
 	ReleaseCOM(mFX);
 	ReleaseCOM(mVertexLayout);
 	//delete testSound;
@@ -229,6 +256,44 @@ ColoredCubeApp::~ColoredCubeApp()
 void ColoredCubeApp::initApp()
 {
 	D3DApp::initApp();
+
+	//set up textures and spec maps
+	//brick texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"brickwork-texture.jpg", 0, 0, &brickTexture, 0 ));
+	//box texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"WoodCrate01.dds", 0, 0, &boxTexture, 0 ));
+	//title screen
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"Title Screen.jpg", 0, 0, &titleTexture, 0 ));
+	//control screen
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"Rules Screen.jpg", 0, 0, &controlTexture, 0 ));
+	//win screen
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"You Win.jpg", 0, 0, &winScreenTexture, 0 ));
+	//lose screen
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"You Lose.jpg", 0, 0, &loseScreenTexture, 0 ));
+	//floor texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"carpet_diffuse.jpg", 0, 0, &floorTexture, 0 ));
+	//ceiling texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"13.free-brick-textures.jpg", 0, 0, &ceilingTexture, 0 ));
+
+	//standard spec map
+	standardSpecMap;
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"13.free-brick-textures.jpg", 0, 0, &standardSpecMap, 0 ));
+	//brick spec map
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"brickwork-bump-map.jpg", 0, 0, &brickSpecMap, 0 ));
+	//ice spec map
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"ice.dds", 0, 0, &iceSpecMap, 0 ));
+
 	//0: Parallel
 	//1: Point
 	//2: Spot
@@ -260,9 +325,10 @@ void ColoredCubeApp::initApp()
 	mazeZ = d.z;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
-	maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
-	maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
-	maze.setFloorTex(mfxDiffuseMapVar,mfxSpecMapVar,L"carpet_diffuse.jpg",L"brickwork-bump-map.jpg");
+	maze.setTex(brickTexture,brickSpecMap);	
+	maze.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
+	maze.setCeilTex(ceilingTexture,brickSpecMap);
+	maze.setFloorTex(floorTexture,brickSpecMap);
 	camera.init(&maze);
 
 	mBox.init(md3dDevice, 1.0f);
@@ -277,17 +343,9 @@ void ColoredCubeApp::initApp()
 
 	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
-	//make the texture init in another function so it is not an issue switching between shaders
-	/*floor.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3,0),Vector3(0,0,0),0,Vector3(20,0.1,20));
-	floor.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"defaultspec.dds");
-
-	wall1.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(-20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
-	wall2.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(20,-3+20,0),Vector3(0,0,0),0,Vector3(0.1,20,20));
-	wall3.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,20),Vector3(0,0,0),0,Vector3(20,20,0.1));
-	wall4.init(&mBox,mfxWVPVar,mfxWorldVar,2,Vector3(0,-3+20,-20),Vector3(0,0,0),0,Vector3(20,20,0.1));*/
-
 	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(1,1,1));
-	player.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");
+	player.setTex(boxTexture,standardSpecMap);
+	player.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	Location start = maze.getStartPosition();
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x+10,0,start.z+10));
@@ -300,7 +358,8 @@ void ColoredCubeApp::initApp()
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.75,0.75,0.75));
-		lamps[i].setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+		lamps[i].setTex(boxTexture,iceSpecMap);
+		lamps[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 		Location l;
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
@@ -321,7 +380,8 @@ void ColoredCubeApp::initApp()
 	}
 
 	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
-	endCube.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	endCube.setTex(boxTexture,iceSpecMap);
+	endCube.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	Location end = maze.getEndPosition();
 	end = maze.cellToPx(end);
 	endCube.setPosition(Vector3(end.x,0,end.z));
@@ -352,7 +412,8 @@ void ColoredCubeApp::initApp()
 	}
 
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
-	ghosts.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	ghosts.setTex(boxTexture,iceSpecMap);
+	ghosts.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
@@ -391,13 +452,6 @@ void ColoredCubeApp::onResize()
 void ColoredCubeApp::updateScene(float dt)
 {
 	updateGameState();
-	if(player.getHealth()<=0)
-	{
-		gamestate = gameover;
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
-		maze.update(dt);
-	}
-
 	endCube.update(dt);
 
 	for(int i = 0; i < numLightObjects; i++)
@@ -528,11 +582,7 @@ void ColoredCubeApp::updateTitle(float dt)
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
 	maze.update(dt);
-	if(once)
-	{
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Title Screen.jpg",L"brickwork-bump-map.jpg");
-		once = false;
-	}
+	maze.setCeilTex(titleTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 	//set ceiling texture here
 }
@@ -542,22 +592,14 @@ void ColoredCubeApp::updateControls(float dt)
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
 	maze.update(dt);
-	if(onceAgain)
-	{
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"Rules Screen.jpg",L"brickwork-bump-map.jpg");
-		onceAgain = false;
-	}
+	maze.setCeilTex(controlTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 	//set ceiling texture here
 }
 
 void ColoredCubeApp::updateL1(float dt)
 {
-	if(onceAgainStart)
-	{
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
-		onceAgainStart = false;
-	}
+	maze.setCeilTex(ceilingTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 		
 	if(GetAsyncKeyState('Y') & 0x8000)
@@ -797,12 +839,7 @@ void ColoredCubeApp::updateLose(float dt)
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
 	//set ceiling texture here
-	if(onceAgainEnd)
-	{
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Lose.jpg",L"brickwork-bump-map.jpg");
-		onceAgainEnd = false;
-		onceAgainStart = true;
-	}
+	maze.setCeilTex(loseScreenTexture,brickSpecMap);
 }
 
 void ColoredCubeApp::updateWin(float dt)
@@ -810,12 +847,7 @@ void ColoredCubeApp::updateWin(float dt)
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
 	//set ceiling texture here
-	if(onceAgainEnd)
-	{
-		maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"You Win.jpg",L"brickwork-bump-map.jpg");
-		onceAgainEnd = false;
-		onceAgainStart = true;
-	}
+	maze.setCeilTex(winScreenTexture,brickSpecMap);
 }
 
 void ColoredCubeApp::drawTitle()
@@ -923,14 +955,16 @@ void ColoredCubeApp::updateGameState()
        {
               gamestate = win;
        }
-       if((gamestate == level1 || gamestate == level2) && player.getHealth() <= 0)
+       if((gamestate == level1 || gamestate == level2) && (player.getHealth() <= 0||(GetAsyncKeyState('Q') & 0x8000)))
        {
               gamestate = gameover;
+			  lights[1].ambient = ambientLight;
        }
-       if((gamestate == gameover ||gamestate==win))//&& (GetAsyncKeyState('P') & 0x8000))
+       if((gamestate == gameover ||gamestate==win) && (GetAsyncKeyState('P') & 0x8000))
        {
               gamestate = title;
 			  reloadLevel(10,10);
+			  player.setHealth(10);
 			  goal = false;
        }
 }
@@ -946,10 +980,36 @@ void ColoredCubeApp::updateGameState()
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
 
-	/*maze.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"brickwork-texture.jpg",L"brickwork-bump-map.jpg");	
-	maze.setCeilTex(mfxDiffuseMapVar,mfxSpecMapVar,L"13.free-brick-textures.jpg",L"brickwork-bump-map.jpg");
-	maze.setFloorTex(mfxDiffuseMapVar,mfxSpecMapVar,L"carpet_diffuse.jpg",L"brickwork-bump-map.jpg");*/
+	//put the player in the right spot
+	Location start = maze.getStartPosition();
+	start = maze.cellToPx(start);
+	player.setPosition(Vector3(start.x+10,0,start.z+10));
 
+	//put the goal box in the correct location
+	Location end = maze.getEndPosition();
+	end = maze.cellToPx(end);
+	endCube.setPosition(Vector3(end.x,0,end.z));
+
+	//set up the end light
+	endLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	endLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 0.3f, 1.0f);
+	endLight.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	endLight.att.x    = 1.0f;
+	endLight.att.y    = 0.0f;
+	endLight.att.z    = 0.0f;
+	endLight.spotPow  = 10;
+	endLight.range    = 100;
+	endLight.pos = D3DXVECTOR3(end.x,10,end.z);
+	endLight.dir = D3DXVECTOR3(0, -1, 0);	
+	endLight.lightType.x = 2;
+
+	//reset the maze textures
+	maze.setTex(brickTexture,brickSpecMap);	
+	maze.setTexLocVariable(mfxDiffuseMapVar, mfxSpecMapVar);
+	maze.setCeilTex(ceilingTexture,brickSpecMap);
+	maze.setFloorTex(floorTexture,brickSpecMap);
+
+	//place extra items in random cells
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		Location l;

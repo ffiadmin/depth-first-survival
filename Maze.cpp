@@ -719,12 +719,19 @@ void Maze::setCeilingVisibility(bool visible) {
 	}
 }
 
-void Maze::setCeilTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap) {
-	walls[wallsConstructed - 1].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
+void Maze::setCeilTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture) {
+	walls[wallsConstructed - 1].setTex(diffuseTexture,specTexture);
 }
 
-void Maze::setFloorTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap) {
-	walls[wallsConstructed - 2].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
+void Maze::setFloorTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture) {
+	walls[wallsConstructed - 2].setTex(diffuseTexture,specTexture);
+}
+
+void Maze::setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc)
+{
+	for(int i = 0; i < wallsConstructed; ++i) {
+		walls[i].setTexLocVariable(diffuseLoc,specLoc);
+	}
 }
 
 void Maze::setStartPosition(Location location) {
@@ -732,9 +739,9 @@ void Maze::setStartPosition(Location location) {
 	root = grid[location.x][location.z];
 }
 
-void Maze::setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap) {
+void Maze::setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture) {
 	for(int i = 0; i < wallsConstructed; ++i) {
-		walls[i].setTex(diffuseLoc, specLoc, diffuseMap, specMap);
+		walls[i].setTex(diffuseTexture,specTexture);
 	}
 }
 

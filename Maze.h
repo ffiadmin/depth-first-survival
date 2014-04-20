@@ -92,10 +92,11 @@ public :
 
 public : 
 	void setCeilingVisibility(bool visible);
-	void setCeilTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
-	void setFloorTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
+	void setCeilTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
+	void setFloorTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
 	void setStartPosition(Location location);
-	void setTex(ID3D10EffectShaderResourceVariable *diffuseLoc, ID3D10EffectShaderResourceVariable *specLoc, wchar_t *diffuseMap, wchar_t *specMap);
+	void setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
+	void setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc);
 
 private : 
 	void addWalls(Node *cell);

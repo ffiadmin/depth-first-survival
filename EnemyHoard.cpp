@@ -59,10 +59,18 @@ void EnemyHoard::update(float dt,GameObject* player)
 	}
 }
 
-void EnemyHoard::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
+void EnemyHoard::setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture)
 {
 	for(int i = 0; i < numEnemies; i++)
 	{
-		enemies[i].setTex(diffuseLoc,specLoc,diffuseMap,specMap);
+		enemies[i].setTex(diffuseTexture,specTexture);
+	}
+}
+
+void EnemyHoard::setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc)
+{
+	for(int i = 0; i < numEnemies; i++)
+	{
+		enemies[i].setTexLocVariable(diffuseLoc,specLoc); 
 	}
 }

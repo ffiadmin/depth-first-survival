@@ -9,7 +9,8 @@ public:
 	void update(float dt,GameObject* player);
 	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	int getNumEnemies() {return numEnemies;}
-	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
+	void setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
+	void setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc);
 	float getTBG() {return timeBetweenGeneration;}
 	void setTBG(float t) {timeBetweenGeneration = t;}
 	EnemyObject* getEnemies() {return enemies;}

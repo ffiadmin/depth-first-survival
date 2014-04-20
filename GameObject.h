@@ -15,7 +15,9 @@ public:
 	~GameObject();
 
 	void init(Geometry *g, ID3D10EffectMatrixVariable* fx,ID3D10EffectMatrixVariable* fx2,float r, Vector3 pos, Vector3 vel, float sp, Vector3 s);
-	void setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap);
+	//sets the pointer to the location of the texture variables in the shader
+	void setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc);
+	void setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
 	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	void update(float dt);
 

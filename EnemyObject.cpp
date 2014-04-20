@@ -2,7 +2,7 @@
 
 void EnemyObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D10EffectMatrixVariable* fx2, float r, Vector3 pos, Vector3 vel, float sp, Vector3 s)
 {
-	setHealth(5);
+	setHealth(1);
 	string types[3];
 	types[0] = "enemy.txt";
 	types[1] = "garretEnemy.txt";

@@ -18,15 +18,24 @@ GameObject::~GameObject()
 	geo = NULL;
 }
 
-void GameObject::setTex(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc, wchar_t* diffuseMap, wchar_t* specMap)
+void GameObject::setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture)
 {
-	mfxDiffuseMapVar = diffuseLoc;
+	/*mfxDiffuseMapVar = diffuseLoc;
 	mfxSpecMapVar = specLoc;
 	HR(D3DX10CreateShaderResourceViewFromFile(geo->md3dDevice, 
 		diffuseMap, 0, 0, &mDiffuseMapRV, 0 ));
 
 	HR(D3DX10CreateShaderResourceViewFromFile(geo->md3dDevice, 
-		specMap, 0, 0, &mSpecMapRV, 0 ));
+		specMap, 0, 0, &mSpecMapRV, 0 ));*/
+	mDiffuseMapRV = diffuseTexture;
+	mSpecMapRV = specTexture;
+	int j = 0;
+}
+
+void GameObject::setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc)
+{
+	mfxDiffuseMapVar = diffuseLoc;
+	mfxSpecMapVar = specLoc;
 }
 
 void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique)
