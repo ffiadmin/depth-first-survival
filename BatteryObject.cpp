@@ -11,7 +11,7 @@ void BatteryObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID
 
 void BatteryObject::update(float dt)
 {
-	setPosition(Vector3(getPosition().x,getPosition().y+hoverChange,getPosition().z));
+	GameObject::setPosition(Vector3(getPosition().x,getPosition().y+hoverChange,getPosition().z));
 	GameObject::update(dt);
 	if(abs(getPosition().y-startY)>hoverDistance)
 	{

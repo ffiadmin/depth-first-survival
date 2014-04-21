@@ -603,9 +603,15 @@ void ColoredCubeApp::updateL1(float dt)
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 		
 	if(GetAsyncKeyState('Y') & 0x8000)
+	{
 		perspective = true;
+		lights[1].ambient = D3DXCOLOR(0.6f, 0.06f, 0.4f, 1.0f);
+	}
 	else
+	{
+		lights[1].ambient = ambientLight;
 		perspective = false;
+	}
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
 	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
@@ -712,9 +718,15 @@ void ColoredCubeApp::updateL2(float dt)
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 		
 	if(GetAsyncKeyState('Y') & 0x8000)
+	{
 		perspective = true;
+		lights[1].ambient = D3DXCOLOR(1,0.5,0.5,1);
+	}
 	else
+	{
 		perspective = false;
+		lights[1].ambient = ambientLight;
+	}
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
 	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
@@ -805,7 +817,7 @@ void ColoredCubeApp::updateL2(float dt)
 
 	ghosts.update(dt,&player);
 	//ghost collision detection
-	lights[1].ambient = ambientLight;
+	
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
 	{
 		//player gets hit by a ghost

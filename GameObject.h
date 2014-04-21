@@ -21,7 +21,7 @@ public:
 	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	void update(float dt);
 
-	void setPosition (Vector3 pos) {position = pos;}
+	virtual void setPosition (Vector3 pos) {position = pos;}
 	Vector3 getPosition() {return position;}
 	void setVelocity (Vector3 vel) {velocity = vel;}
 	Vector3 getVelocity() {return velocity;}
