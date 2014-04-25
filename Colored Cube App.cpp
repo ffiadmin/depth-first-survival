@@ -60,6 +60,7 @@ private:
 	void updateL2(float dt);
 	void updateLose(float dt);
 	void updateWin(float dt);
+	void updateLights();
 	void drawTitle();
 	void drawControls();
 	void drawL1();
@@ -70,7 +71,9 @@ private:
 	Gamestates gamestate;
 	Audio* audio;
 	playerControls camera;
-	Light lights[15];
+	Light lights[10];
+	int lightsGoingInShader;
+	Light* totalLights[100];
 	//LightObject lightObject1;
 	//Input* input;
 	float score;
@@ -92,6 +95,7 @@ private:
 	GameObject player;
 	GameObject endCube;
 	Light endLight;
+	Light ambientLighting;
 	//GameObject floor,wall1,wall2,wall3,wall4;
 	//EnemyObject enemy;
 	EnemyHoard ghosts;
@@ -99,7 +103,7 @@ private:
 	FlashLightObject flashLightObject;
 	//BatteryObject batteryObject;
 	BatteryObject batteries[20];
-	LightObject lamps[10];
+	LightObject lamps[30];
 
 	int numLightObjects;
 	int numBatteries;
@@ -108,7 +112,8 @@ private:
 	int oldBLevel;
 	float spinAmount;
 	int prevLightType;//used for switching light types
-	int numLights;
+	//variable used to keep track of the lights added to the master array so that indexing is kept correctly
+	int lightsAdded;
 	int mazeX;
 	int mazeZ;
 
@@ -205,6 +210,10 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 : D3DApp(hInstance), mFX(0), mTech(0), mVertexLayout(0),
   mfxWVPVar(0), mTheta(0.0f), mPhi(PI*0.4f), player(), mRadius(5000), mEyePos(0.0f, 0.0f, 0.0f), ghosts(3,10,50,50)
 {
+	for(int i = 0; i < 100; i++)
+	{
+		totalLights[i] = 0;
+	}
 	once = true;
 	onceAgain = true;
 	onceAgainStart = true;
@@ -212,13 +221,14 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
-	numLightObjects = 5;
+	numLightObjects = 30;
 	numBatteries = 20;
 	player.setHealth(10);
-	numLights=10;
+	lightsGoingInShader = 10;
 	prevLightType = 0;
 	score = 0;
 	timer = 30;
+	lightsAdded = 0;
 	perspective = false;
 	D3DXMatrixIdentity(&mView);
 	D3DXMatrixIdentity(&mProj);
@@ -302,17 +312,17 @@ void ColoredCubeApp::initApp()
 
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-	lights[1].ambient  = ambientLight;
-	lights[1].diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
-	lights[1].specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	lights[1].att.x    = 1.0f;
-	lights[1].att.y    = 0.0f;
-	lights[1].att.z    = 0.0f;
-	lights[1].spotPow  = 20;
-	lights[1].range    = 100;
-	lights[1].pos = D3DXVECTOR3(-10,20,-10);
-	lights[1].dir = D3DXVECTOR3(0, -1, 0);	
-	lights[1].lightType.x = 0;
+	ambientLighting.ambient = ambientLight;
+	ambientLighting.diffuse  = D3DXCOLOR(0.0f, 0.02f, 0.02f, 1.0f);
+	ambientLighting.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+	ambientLighting.att.x    = 1.0f;
+	ambientLighting.att.y    = 0.0f;
+	ambientLighting.att.z    = 0.0f;
+	ambientLighting.spotPow  = 20;
+	ambientLighting.range    = 100;
+	ambientLighting.pos = D3DXVECTOR3(-10,20,-10);
+	ambientLighting.dir = D3DXVECTOR3(0, -1, 0);	
+	ambientLighting.lightType.x = 0;
 
 
 	buildFX();
@@ -366,6 +376,8 @@ void ColoredCubeApp::initApp()
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 		lamps[i].setColor(D3DXCOLOR(0.2f, 0.5f, 0.3f, 1.0f));
+		totalLights[lightsAdded] = lamps[i].getLight();
+		lightsAdded++;
 	}
 
 	key.init(md3dDevice,1,"item1.txt");
@@ -399,6 +411,7 @@ void ColoredCubeApp::initApp()
 	endLight.dir = D3DXVECTOR3(0, -1, 0);	
 	endLight.lightType.x = 2;
 
+	totalLights[lightsAdded] = &endLight;
 
 	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	for(int i = 0; i < numBatteries; i++)
@@ -415,6 +428,12 @@ void ColoredCubeApp::initApp()
 	ghosts.setTex(boxTexture,iceSpecMap);
 	ghosts.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		totalLights[lightsAdded] = ghosts.getEnemies()[i].getLight();
+		lightsAdded++;
+	}
+
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
     audio = new Audio();
@@ -469,26 +488,78 @@ void ColoredCubeApp::updateScene(float dt)
 			audio->playCue(BATTERY_CHARGE);
 		}
 	}
+
 	switch(gamestate)
 	{
 	case title:
 		updateTitle(dt);
+		lights[0] = ambientLighting;
 		break;
 	case controls:
 		updateControls(dt);
+		lights[0] = ambientLighting;
 		break;
 	case level1:
 		updateL1(dt);
+		updateLights();
 		break;
 	case level2:
 		updateL2(dt);
+		updateLights();
 		break;
 	case gameover:
 		updateLose(dt);
+		lights[0] = ambientLighting;
 		break;
 	case win:
 		updateWin(dt);
+		lights[0] = ambientLighting;
 		break;
+	}
+}
+
+void ColoredCubeApp::updateLights()
+{
+	int lightRadius = 50;
+	//put in default lights
+	lights[0] = flashLightObject.getLight();
+	lights[1] = ambientLighting;
+	Light addingLights[8];
+	//calculate the distance of each light from the player
+	double distances[100];
+	bool added[100];
+	for(int i = 0; i < 100; i++)
+	{
+		added[i] = false;
+	}
+	int n = 0;
+	for(int i = 0; i < lightsAdded; i++)
+	{
+		Vector3 diff = player.getPosition()-totalLights[i]->pos;
+		double distance = sqrtf(abs(Dot(&diff,&diff)));
+		distances[i] = distance;
+		/*if(distances[i]<lightRadius)
+		{
+			addingLights[n] = *totalLights[n];
+			n++;
+		}
+		if(n>=8)
+		{
+			break;
+		}*/
+	}
+	for(int i = 2; i < 10; i++)
+	{
+		//lights[i] = addingLights[i-2];
+		for(int j = 0; j < lightsAdded; j++)
+		{
+			if(!added[j] && distances[j] < lightRadius)
+			{
+				added[j] = true;
+				lights[i] = *totalLights[j];
+				break;
+			}
+		}
 	}
 }
 
@@ -507,25 +578,9 @@ void ColoredCubeApp::drawScene()
 	mfxEyePosVar->SetRawValue(&player.getPosition(), 0, sizeof(D3DXVECTOR3));
 
 	//set the number of lights to use
-	mfxNumLights->SetInt(numLights);
-
-	// set the light array
-	lights[0] = flashLightObject.lightSource;
-	//lights[2] = lightObject1.getLight();
-	if(gamestate == level2)
-	{
-		for(int i = 0; i < ghosts.getNumEnemies(); i++)
-		{
-			lights[2+i] = ghosts.getEnemies()[i].getLight();
-		}
-	}
-	for(int i = 0; i < numLightObjects; i++)
-	{
-		lights[2+ghosts.getNumEnemies()+i] = lamps[i].getLight();
-	}
-	lights[numLights-1] = endLight;
-
-	mfxLightVar->SetRawValue(&lights[0], 0, numLights*sizeof(Light));
+	mfxNumLights->SetInt(lightsGoingInShader);
+	//throw lights at shader boooom!!!!!!
+	mfxLightVar->SetRawValue(&lights[0], 0, lightsGoingInShader*sizeof(Light));
  
 	// Don't transform texture coordinates, so just use identity transformation.
 	D3DXMATRIX texMtx;
@@ -605,11 +660,11 @@ void ColoredCubeApp::updateL1(float dt)
 	if(GetAsyncKeyState('Y') & 0x8000)
 	{
 		perspective = true;
-		lights[1].ambient = D3DXCOLOR(0.6f, 0.06f, 0.4f, 1.0f);
+		ambientLighting.ambient = D3DXCOLOR(0.6f, 0.06f, 0.4f, 1.0f);
 	}
 	else
 	{
-		lights[1].ambient = ambientLight;
+		ambientLighting.ambient = ambientLight;
 		perspective = false;
 	}
 	//detect battery level
@@ -720,12 +775,12 @@ void ColoredCubeApp::updateL2(float dt)
 	if(GetAsyncKeyState('Y') & 0x8000)
 	{
 		perspective = true;
-		lights[1].ambient = D3DXCOLOR(1,0.5,0.5,1);
+		ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
 	}
 	else
 	{
 		perspective = false;
-		lights[1].ambient = ambientLight;
+		ambientLighting.ambient = ambientLight;
 	}
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
@@ -970,7 +1025,7 @@ void ColoredCubeApp::updateGameState()
        if((gamestate == level1 || gamestate == level2) && (player.getHealth() <= 0||(GetAsyncKeyState('Q') & 0x8000)))
        {
               gamestate = gameover;
-			  lights[1].ambient = ambientLight;
+			  ambientLighting.ambient = ambientLight;
        }
        if((gamestate == gameover ||gamestate==win) && (GetAsyncKeyState('P') & 0x8000))
        {
@@ -983,6 +1038,8 @@ void ColoredCubeApp::updateGameState()
 
  void ColoredCubeApp::reloadLevel(int x, int z)
 {
+	mazeX = x;
+	mazeZ = z;
 	currentKeys = 0;
 	flashLightObject.getBattery();
 	//add in the maze reset function
