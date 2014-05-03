@@ -635,7 +635,7 @@ void ColoredCubeApp::drawScene()
 void ColoredCubeApp::updateTitle(float dt)
 {
 	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	maze.update(dt);
 	maze.setCeilTex(titleTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
@@ -645,7 +645,7 @@ void ColoredCubeApp::updateTitle(float dt)
 void ColoredCubeApp::updateControls(float dt)
 {
 	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	maze.update(dt);
 	maze.setCeilTex(controlTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
@@ -678,7 +678,7 @@ void ColoredCubeApp::updateL1(float dt)
 	timer -= dt;
 	std::wostringstream outs; 
 	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
 	//move the player
 	camera.movePlayer(player,30,camera.getTarget(),perspective);
 	player.update(dt);
@@ -793,7 +793,7 @@ void ColoredCubeApp::updateL2(float dt)
 	timer -= dt;
 	std::wostringstream outs; 
 	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective);
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
 	//move the player
 	camera.movePlayer(player,30,camera.getTarget(),perspective);
 	player.update(dt);
@@ -904,7 +904,7 @@ void ColoredCubeApp::updateL2(float dt)
 void ColoredCubeApp::updateLose(float dt)
 {
 	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here
 	maze.setCeilTex(loseScreenTexture,brickSpecMap);
 }
@@ -912,7 +912,7 @@ void ColoredCubeApp::updateLose(float dt)
 void ColoredCubeApp::updateWin(float dt)
 {
 	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true);
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here
 	maze.setCeilTex(winScreenTexture,brickSpecMap);
 }
