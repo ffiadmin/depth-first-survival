@@ -68,7 +68,7 @@ void playerControls::resize(D3DXMATRIX &Proj, float FOV, float nearClip, float f
 	D3DXMatrixPerspectiveFovLH(&Proj, FOV, aspectRatio, nearClip, farClip);
 }
 
-void playerControls::update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective, bool power)
+void playerControls::update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective)
 {
 	if(perspective)
 	{
@@ -101,31 +101,15 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 
 		// Convert Spherical to Cartesian coordinates: mPhi measured from +y
 		// and mTheta measured counterclockwise from -z.
-		if(!power)
-		{
-			eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
-			eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + maze->getDimension().z/2.0f;
-			eyePos.y =  mRadius*cosf(mPhi);
+		eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
+		eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + maze->getDimension().z/2.0f;
+		eyePos.y =  mRadius*cosf(mPhi);
 
-			// Build the view matrix.
-			target = Vector3(0.0f, 0.0f, 0.0f);
-			target.x = maze->getDimension().x/2.0f;
-			target.y = 0.0f;
-			target.z = maze->getDimension().z/2.0f;
-		}
-		else
-		{
-			mRadius = 100;
-			eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + player.getPosition().x;
-			eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + player.getPosition().z;
-			eyePos.y =  mRadius*cosf(mPhi);
-
-			// Build the view matrix.
-			target = Vector3(0.0f, 0.0f, 0.0f);
-			target.x = player.getPosition().x;
-			target.y = 0.0f;
-			target.z = player.getPosition().z;
-		}
+		// Build the view matrix.
+		target = Vector3(0.0f, 0.0f, 0.0f);
+		target.x = maze->getDimension().x/2.0f;
+		target.y = 0.0f;
+		target.z = maze->getDimension().z/2.0f;
 		D3DXVECTOR3 up(0.0f, 1.0f, 0.0f);
 		D3DXMatrixLookAtLH(&view, &eyePos, &target, &up);
 		Normalize(&target,&target);

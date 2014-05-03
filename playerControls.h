@@ -35,7 +35,7 @@ public:
 	//Call this in initApp
 	void setHeightAndWidth(int wH, int wW) { windowHeight = wH; windowWidth = wW;}
 	//Call this in update
-	void update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective, bool power);
+	void update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective);
 	Vector3 getTarget() {return target;}
 
 private : 
