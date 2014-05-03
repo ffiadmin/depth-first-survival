@@ -80,15 +80,8 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 		{
 			maze->setCeilingVisibility(false);
 		}
-		float mPhi = 0.1f, mTheta = 0.0f;
+		float mPhi = 0.1f, mTheta = ToRadian(90.0f);
 		float mRadius = maze->getDimension().x + 20.0f;
-		/*if(GetAsyncKeyState('J') & 0x8000)	theta -= 2.0f*dt;
-		if(GetAsyncKeyState('L') & 0x8000)	theta += 2.0f*dt;
-		if(GetAsyncKeyState('I') & 0x8000)	phi -= 2.0f*dt;
-		if(GetAsyncKeyState('K') & 0x8000)	phi += 2.0f*dt;
-		if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
-		if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;*/
-
 		// Restrict the angle mPhi and radius mRadius.
 		//if( phi < 0.1f )	phi = 0.1f;
 		//if( phi > PI-0.1f)	phi = PI-0.1f;
@@ -103,6 +96,12 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 		// and mTheta measured counterclockwise from -z.
 		if(!power)
 		{
+			if(GetAsyncKeyState('J') & 0x8000)	mTheta += 10.0f*dt;
+			if(GetAsyncKeyState('L') & 0x8000)	mTheta -= 10.0f*dt;
+			if(GetAsyncKeyState('I') & 0x8000)	mPhi -= 10.0f*dt;
+			if(GetAsyncKeyState('K') & 0x8000)	mPhi += 10.0f*dt;
+			//if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
+			//if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;
 			eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
 			eyePos.z = -mRadius*sinf(mPhi)*cosf(mTheta) + maze->getDimension().z/2.0f;
 			eyePos.y =  mRadius*cosf(mPhi);
