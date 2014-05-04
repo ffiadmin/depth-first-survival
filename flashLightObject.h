@@ -17,6 +17,7 @@ public:
 	void setRotation(Vector3 r);
 	void getBattery();
 	int getPowerLevel() { return powerLevel;}
+	bool getOn() {return on;}
 	Light getLight() {return lightSource;}
 	Light lightSource;
 	bool hitTarget(GameObject* g);
@@ -25,10 +26,12 @@ private:
 	
 	Box b;
 	float timer;
+	bool on;
 	int decreaseIncrement;
 	int powerLevel;
 	float powerLossValue;
 	float hitDistance;
 	float hitDimension;
 	Mesh flashLight;
+	bool debounce;
 };

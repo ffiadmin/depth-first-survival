@@ -22,6 +22,8 @@ FlashLightObject::FlashLightObject()
 	decreaseIncrement = 10;
 	powerLossValue = 0.2;
 	powerLevel = (int)ceil((1.0f/powerLossValue));
+	on = false;
+	debounce = false;
 	int i = 0;
 }
 
@@ -41,7 +43,18 @@ bool FlashLightObject::hitTarget(GameObject* g)
 
 void FlashLightObject::update(float dt)
 {
-	timer+=dt;
+	if(!debounce && GetAsyncKeyState('O') & 0x8000)
+	{
+		on = !on;
+		debounce = true;
+	}
+	if(!(GetAsyncKeyState('O') & 0x8000))
+	{
+		debounce = false;
+	}
+
+	if(on)
+		timer+=dt;
 	if(timer>decreaseIncrement)
 	{
 		timer = 0;

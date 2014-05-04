@@ -27,7 +27,7 @@ public:
 
 	//Call this in update
 	void movePlayer(GameObject &player, float playerSpeed, Vector3 dir, bool perspective);
-	Vector3 movementFP(Vector3 dir);
+	Vector3 movementFP(Vector3 dir, bool perspective);
 
 	void init(Maze *m);
 	//Call this in onResize

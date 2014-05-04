@@ -117,10 +117,7 @@ private:
 	int mazeX;
 	int mazeZ;
 
-	bool once;
-	bool onceAgain;
-	bool onceAgainStart;
-	bool onceAgainEnd;
+	bool perspectiveDebounced;
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
@@ -214,14 +211,12 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	{
 		totalLights[i] = 0;
 	}
-	once = true;
-	onceAgain = true;
-	onceAgainStart = true;
-	onceAgainEnd = true;
+
+	perspectiveDebounced = false;
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
-	numLightObjects = 30;
+	numLightObjects = 10;
 	numBatteries = 20;
 	player.setHealth(10);
 	lightsGoingInShader = 10;
@@ -353,7 +348,7 @@ void ColoredCubeApp::initApp()
 
 	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
-	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(1,1,1));
+	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(2,2,2));
 	player.setTex(boxTexture,standardSpecMap);
 	player.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	Location start = maze.getStartPosition();
@@ -470,8 +465,21 @@ void ColoredCubeApp::onResize()
 
 void ColoredCubeApp::updateScene(float dt)
 {
+	ambientLighting.ambient = ambientLight;
 	updateGameState();
 	endCube.update(dt);
+
+	if(!perspectiveDebounced && GetAsyncKeyState('Y') & 0x8000)
+	{
+		perspective = !perspective;
+		perspectiveDebounced = true;
+		//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
+	}
+	if(!(GetAsyncKeyState('Y') & 0x8000))
+	{
+		perspectiveDebounced = false;
+		//ambientLighting.ambient = ambientLight;
+	}
 
 	for(int i = 0; i < numLightObjects; i++)
 	{
@@ -522,8 +530,15 @@ void ColoredCubeApp::updateLights()
 {
 	int lightRadius = 50;
 	//put in default lights
-	lights[0] = flashLightObject.getLight();
-	lights[1] = ambientLighting;
+	int lightIndex = 0;
+	if(flashLightObject.getOn())
+	{
+		lights[lightIndex] = flashLightObject.getLight();
+		lightIndex++;
+	}
+
+	lights[lightIndex] = ambientLighting;
+	lightIndex++;
 	Light addingLights[8];
 	//calculate the distance of each light from the player
 	double distances[100];
@@ -548,7 +563,7 @@ void ColoredCubeApp::updateLights()
 			break;
 		}*/
 	}
-	for(int i = 2; i < 10; i++)
+	for(int i = lightIndex; i < 10; i++)
 	{
 		//lights[i] = addingLights[i-2];
 		for(int j = 0; j < lightsAdded; j++)
@@ -622,6 +637,8 @@ void ColoredCubeApp::drawScene()
 	//flashLightObject.draw(mView,mProj,mTechColor2);
 	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
+	player.draw(mView,mProj,mTech);
+
 	//batteryObject.draw(mView,mProj,mTechColor2);
 	//player.draw(mView,mProj,mTechColor2);
 	ghosts.draw(mView,mProj,mTech);
@@ -634,39 +651,33 @@ void ColoredCubeApp::drawScene()
 
 void ColoredCubeApp::updateTitle(float dt)
 {
+	ambientLighting.ambient = ambientLight;
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	maze.update(dt);
 	maze.setCeilTex(titleTexture,brickSpecMap);
-	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	ambientLighting.ambient = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	//ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 	//set ceiling texture here
 }
 
 void ColoredCubeApp::updateControls(float dt)
 {
+	ambientLighting.ambient = ambientLight;
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	maze.update(dt);
 	maze.setCeilTex(controlTexture,brickSpecMap);
-	ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	ambientLighting.ambient = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
+	//ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
 	//set ceiling texture here
 }
 
 void ColoredCubeApp::updateL1(float dt)
 {
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
-	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	//ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 		
-	if(GetAsyncKeyState('Y') & 0x8000)
-	{
-		perspective = true;
-		ambientLighting.ambient = D3DXCOLOR(0.6f, 0.06f, 0.4f, 1.0f);
-	}
-	else
-	{
-		ambientLighting.ambient = ambientLight;
-		perspective = false;
-	}
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
 	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
@@ -771,17 +782,7 @@ void ColoredCubeApp::updateL1(float dt)
 void ColoredCubeApp::updateL2(float dt)
 {
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
-		
-	if(GetAsyncKeyState('Y') & 0x8000)
-	{
-		perspective = true;
-		ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
-	}
-	else
-	{
-		perspective = false;
-		ambientLighting.ambient = ambientLight;
-	}
+
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
 	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
@@ -886,12 +887,15 @@ void ColoredCubeApp::updateL2(float dt)
 		}
 	}
 	//flashlight ghost attack
-	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	if(flashLightObject.getOn())
 	{
-		if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+		for(int i = 0; i < ghosts.getNumEnemies(); i++)
 		{
-			ghosts.getEnemies()[i].decreaseHealth();
-			audio->playCue(G_HIT);
+			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+			{
+				ghosts.getEnemies()[i].decreaseHealth();
+				audio->playCue(G_HIT);
+			}
 		}
 	}
 	//win scenario
@@ -903,6 +907,7 @@ void ColoredCubeApp::updateL2(float dt)
 
 void ColoredCubeApp::updateLose(float dt)
 {
+	ambientLighting.ambient = ambientLight;
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here
@@ -911,6 +916,7 @@ void ColoredCubeApp::updateLose(float dt)
 
 void ColoredCubeApp::updateWin(float dt)
 {
+	ambientLighting.ambient = ambientLight;
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here

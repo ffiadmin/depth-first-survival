@@ -22,19 +22,29 @@ void playerControls::init(Maze *m)
 
 void playerControls::movePlayer(GameObject &player, float playerSpeed, Vector3 dir, bool perspective)
 {
-	if(perspective)
-	{
-		
-	}
-	else
-	{
-		player.setVelocity(movementFP(dir) * playerSpeed);
-	}
+	player.setVelocity(playerSpeed * movementFP(dir,perspective));
 }
 
-Vector3 playerControls::movementFP(Vector3 dir)
+Vector3 playerControls::movementFP(Vector3 dir, bool perspective)
 {
 	Vector3 direction = Vector3(0,0,0);
+	if(perspective)
+	{
+		if(GetAsyncKeyState('W') & 0x8000)
+			direction.x = -1;
+		if(GetAsyncKeyState('A') & 0x8000)
+		{
+			direction.z = -1;
+		}
+		if(GetAsyncKeyState('S') & 0x8000)
+			direction.x = 1;
+		if(GetAsyncKeyState('D') & 0x8000)
+		{
+			direction.z = 1;
+		}
+		return direction;
+	}
+
 	//D3DXVec3Transform(&start,&lightSource.dir,&rotateX)
 	if(GetAsyncKeyState('W') & 0x8000)
 		direction = Vector3(dir.x,0,dir.z);
