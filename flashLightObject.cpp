@@ -34,9 +34,13 @@ bool FlashLightObject::hitTarget(GameObject* g)
 		return false;
 	}
 	//create hit cube dimensions and check if the enemy is within it if so return true
-	if(hitBox.collided(g))
+	for(int i = 0; i < 10; i++)
 	{
-		return true;
+		hitBox.setPosition((lightSource.dir*i)+getPosition());
+		if(hitBox.collided(g))
+		{
+			return true;
+		}
 	}
 	return false;
 }
@@ -69,8 +73,8 @@ void FlashLightObject::update(float dt)
 	}
 	GameObject::update(dt);
 	lightSource.pos = getPosition();
-	hitBox.setPosition((lightSource.dir*5)+getPosition());
-	hitBox.update(dt);
+	//hitBox.setPosition((lightSource.dir*5)+getPosition());
+	//hitBox.update(dt);
 	//Normalize(&lightSource.dir,&getRotation());
 }
 
@@ -86,7 +90,7 @@ void FlashLightObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx
 	flashLight.init(device,1,"flashLight.txt");
 	GameObject::init(&flashLight,fx,fx2,r,pos,vel,sp,s);
 	b.init(device,s.x);
-	hitBox.init(&b,fx,fx2,sqrt(2.0f),pos,Vector3(0,0,0),0,Vector3(3,3,3));
+	hitBox.init(&b,fx,fx2,sqrt(4.0f),pos,Vector3(0,0,0),0,Vector3(3,3,3));
 }
 
 void FlashLightObject::setRotation(Vector3 r)

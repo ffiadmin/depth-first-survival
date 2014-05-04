@@ -6,7 +6,7 @@ class EnemyHoard
 public:
 	EnemyHoard(int numE, float timeBetweenGen,int gridX, int gridZ);
 	~EnemyHoard();
-	void update(float dt,GameObject* player);
+	void update(float dt,GameObject* player, Vector3 playerDir, bool topDown);
 	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	int getNumEnemies() {return numEnemies;}
 	void setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);

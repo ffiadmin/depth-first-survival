@@ -32,7 +32,7 @@ void EnemyHoard::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
 	}
 }
 
-void EnemyHoard::update(float dt,GameObject* player)
+void EnemyHoard::update(float dt,GameObject* player, Vector3 playerDir, bool topDown)
 {
 	timer+=dt;
 	if(timer>=timeBetweenGeneration)
@@ -55,7 +55,7 @@ void EnemyHoard::update(float dt,GameObject* player)
 	}
 	for(int i = 0; i < numEnemies; i++)
 	{
-		enemies[i].update(dt,player);
+		enemies[i].update(dt,player,playerDir,topDown);
 	}
 }
 

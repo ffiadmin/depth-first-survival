@@ -42,6 +42,10 @@ Vector3 playerControls::movementFP(Vector3 dir, bool perspective)
 		{
 			direction.z = 1;
 		}
+
+		if(direction != VectorZero)
+			Normalize(&direction, &direction);
+
 		return direction;
 	}
 

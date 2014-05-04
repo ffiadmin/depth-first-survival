@@ -676,7 +676,7 @@ void ColoredCubeApp::updateControls(float dt)
 void ColoredCubeApp::updateL1(float dt)
 {
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
-	//ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
+	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 		
 	//detect battery level
 	//maybe give gameObjects an audio pointer so they can play cues when necessary...
@@ -871,7 +871,7 @@ void ColoredCubeApp::updateL2(float dt)
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	mTimer = outs.str();
 
-	ghosts.update(dt,&player);
+	ghosts.update(dt,&player,camera.getTarget(),perspective);
 	//ghost collision detection
 	
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)

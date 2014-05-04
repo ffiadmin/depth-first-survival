@@ -23,14 +23,26 @@ void EnemyObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D
 	ghostLight.lightType.x = 2;
 }
 
-void EnemyObject::update(float dt, GameObject* player)
+void EnemyObject::update(float dt, GameObject* player, Vector3 playerDir, bool topDown)
 {
 	if(!getActiveState())
 		return;
 	ghostLight.pos = getPosition() - (ghostLight.dir*5);
-	Vector3 direction = player->getPosition()-getPosition();
+	Vector3 diff = player->getPosition()-getPosition();
+	double distance = sqrtf(abs(Dot(&diff,&diff)));
+	Vector3 direction = diff;
 	Normalize(&direction,&direction);
-	setVelocity(direction *15);
+
+	double angle = ToDegree(acos((double)Dot(&playerDir, &direction)));
+
+	if(distance > 20 || (angle < 210 && angle > 140) || topDown)
+	{		
+		setVelocity(direction *15);
+	}
+	else
+	{
+		setVelocity(Vector3(0,0,0));
+	}
 	GameObject::update(dt);
 	if(getHealth()<=0)
 		setInActive();
