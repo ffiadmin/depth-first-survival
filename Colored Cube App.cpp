@@ -685,7 +685,7 @@ void ColoredCubeApp::drawScene()
 	}
 
 	//draw the end cube
-	if(gamestate == level2)
+	if(gamestate == level3)
 		endCube.draw(mView,mProj,mTech);
 
 	//draw the origin
@@ -1206,7 +1206,7 @@ void ColoredCubeApp::updateGameState()
        {
             nextState = level3;
 			gamestate = splash;
-			reloadLevel(20,20);
+			reloadLevel(10,10);
 			splashScreen = l3Splash;
        }
 	   if(gamestate == level3 && goal)
