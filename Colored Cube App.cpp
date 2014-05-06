@@ -54,14 +54,11 @@ private:
 	void buildVertexLayouts();
  
 private:
-	void updateTitle(float dt);
-	void updateControls(float dt);
 	void updateL1(float dt);
 	void updateL2(float dt);
 	void updateL3(float dt);
 	void updateL4(float dt);
-	void updateLose(float dt);
-	void updateWin(float dt);
+	void updateSplashScreen(float dt,ID3D10ShaderResourceView* screen);
 	void updateLights();
 	void drawTitle();
 	void drawControls();
@@ -73,6 +70,7 @@ private:
 	void dropBread(Vector3 pos);
 
 	Gamestates gamestate;
+	Gamestates nextState;
 	Audio* audio;
 	playerControls camera;
 	Light lights[10];
@@ -159,10 +157,15 @@ private:
 	ID3D10ShaderResourceView* loseScreenTexture;
 	ID3D10ShaderResourceView* floorTexture;
 	ID3D10ShaderResourceView* ceilingTexture;
+	ID3D10ShaderResourceView* l1Splash;
+	ID3D10ShaderResourceView* l2Splash;
+	ID3D10ShaderResourceView* l3Splash;
 
 	ID3D10ShaderResourceView* standardSpecMap;
 	ID3D10ShaderResourceView* brickSpecMap;
 	ID3D10ShaderResourceView* iceSpecMap;
+
+	ID3D10ShaderResourceView* splashScreen;
 
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
@@ -302,6 +305,15 @@ void ColoredCubeApp::initApp()
 	//ceiling texture
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"13.free-brick-textures.jpg", 0, 0, &ceilingTexture, 0 ));
+	//level 1 splash
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"l1Splash.jpg", 0, 0, &l1Splash, 0 ));
+	//level 2 splash
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"l2Splash.jpg", 0, 0, &l2Splash, 0 ));
+	//level 3 splash
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"l3Splash.jpg", 0, 0, &l3Splash, 0 ));
 
 	//standard spec map
 	standardSpecMap;
@@ -452,7 +464,7 @@ void ColoredCubeApp::initApp()
 		breadCrumbs[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
 		breadCrumbs[i].setInActive();
 		breadCrumbs[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
-		breadCrumbs[i].setTex(boxTexture,iceSpecMap);
+		breadCrumbs[i].setTex(ceilingTexture,iceSpecMap);
 	}
 
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
@@ -542,11 +554,11 @@ void ColoredCubeApp::updateScene(float dt)
 	switch(gamestate)
 	{
 	case title:
-		updateTitle(dt);
+		updateSplashScreen(dt,titleTexture);
 		lights[0] = ambientLighting;
 		break;
 	case controls:
-		updateControls(dt);
+		updateSplashScreen(dt,controlTexture);
 		lights[0] = ambientLighting;
 		break;
 	case level1:
@@ -566,11 +578,15 @@ void ColoredCubeApp::updateScene(float dt)
 		updateLights();
 		break;
 	case gameover:
-		updateLose(dt);
+		updateSplashScreen(dt,loseScreenTexture);
 		lights[0] = ambientLighting;
 		break;
 	case win:
-		updateWin(dt);
+		updateSplashScreen(dt,winScreenTexture);
+		lights[0] = ambientLighting;
+		break;
+	case splash:
+		updateSplashScreen(dt,splashScreen);
 		lights[0] = ambientLighting;
 		break;
 	}
@@ -708,30 +724,6 @@ void ColoredCubeApp::drawScene()
 	mSwapChain->Present(0, 0);
 }
 
-void ColoredCubeApp::updateTitle(float dt)
-{
-	ambientLighting.ambient = ambientLight;
-	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
-	maze.update(dt);
-	maze.setCeilTex(titleTexture,brickSpecMap);
-	ambientLighting.ambient = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-	//ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-	//set ceiling texture here
-}
-
-void ColoredCubeApp::updateControls(float dt)
-{
-	ambientLighting.ambient = ambientLight;
-	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
-	maze.update(dt);
-	maze.setCeilTex(controlTexture,brickSpecMap);
-	ambientLighting.ambient = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-	//ambientLight = D3DXCOLOR(1.0f,1.0f,1.0f,1.0f);
-	//set ceiling texture here
-}
-
 void ColoredCubeApp::updateL1(float dt)
 {
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
@@ -840,7 +832,7 @@ void ColoredCubeApp::updateL1(float dt)
 	}
 }
 
-void ColoredCubeApp::updateL2(float dt)
+void ColoredCubeApp::updateL3(float dt)
 {
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 
@@ -968,7 +960,7 @@ void ColoredCubeApp::updateL2(float dt)
 	}
 }
 
-void ColoredCubeApp::updateL3(float dt)
+void ColoredCubeApp::updateL2(float dt)
 {
 	std::wostringstream outs;
 	outs.precision(2);
@@ -1095,22 +1087,14 @@ void ColoredCubeApp::updateL4(float dt)
 
 }
 
-void ColoredCubeApp::updateLose(float dt)
+void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* screen)
 {
-	ambientLighting.ambient = ambientLight;
+	ambientLighting.ambient = D3DXCOLOR(1,1,1,1);
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here
-	maze.setCeilTex(loseScreenTexture,brickSpecMap);
-}
-
-void ColoredCubeApp::updateWin(float dt)
-{
-	ambientLighting.ambient = ambientLight;
-	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
-	//set ceiling texture here
-	maze.setCeilTex(winScreenTexture,brickSpecMap);
+	maze.setCeilTex(screen,brickSpecMap);
+	maze.update(dt);
 }
 
 void ColoredCubeApp::drawTitle()
@@ -1207,17 +1191,23 @@ void ColoredCubeApp::updateGameState()
        }
 	   if(gamestate == controls && (GetAsyncKeyState('G') & 0x8000))
        {
-            gamestate = level1;
+            gamestate = splash;
+			nextState = level1;
+			splashScreen = l1Splash;
        }
        if(gamestate == level1 && (currentKeys==totalKeys||(GetAsyncKeyState('P') & 0x8000)))
        {
-            gamestate = level2;
+		    gamestate = splash;
+            nextState = level2;
 			reloadLevel(10,10);
+			splashScreen = l2Splash;
        }
        if(gamestate == level2 && goal ||(GetAsyncKeyState('Q') & 0x8000))
        {
-            gamestate = level3;
+            nextState = level3;
+			gamestate = splash;
 			reloadLevel(20,20);
+			splashScreen = l3Splash;
        }
 	   if(gamestate == level3 && goal)
 	   {
@@ -1226,6 +1216,11 @@ void ColoredCubeApp::updateGameState()
 	   if(gamestate == level4 && goal)
 	   {
 		   gamestate = win;//WOOHOO!!!
+	   }
+	   if(gamestate == splash && (GetAsyncKeyState(VK_SPACE) & 0x8000))
+	   {
+		   gamestate = nextState;
+		   maze.setCeilTex(ceilingTexture,brickSpecMap);
 	   }
        if((player.getHealth() <= 0))
        {

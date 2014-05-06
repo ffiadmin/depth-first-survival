@@ -110,10 +110,10 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 		// and mTheta measured counterclockwise from -z.
 		if(!power)
 		{
-			if(GetAsyncKeyState('J') & 0x8000)	mTheta += 10.0f*dt;
-			if(GetAsyncKeyState('L') & 0x8000)	mTheta -= 10.0f*dt;
-			if(GetAsyncKeyState('I') & 0x8000)	mPhi -= 10.0f*dt;
-			if(GetAsyncKeyState('K') & 0x8000)	mPhi += 10.0f*dt;
+			if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	mTheta += 10.0f*dt;
+			if(GetAsyncKeyState(VK_LEFT) & 0x8000)	mTheta -= 10.0f*dt;
+			if(GetAsyncKeyState(VK_UP) & 0x8000)	mPhi -= 10.0f*dt;
+			if(GetAsyncKeyState(VK_DOWN) & 0x8000)	mPhi += 10.0f*dt;
 			//if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
 			//if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;
 			eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
@@ -146,10 +146,10 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 	else
 	{
 		maze->setCeilingVisibility(true);
-		if(GetAsyncKeyState('L') & 0x8000)	theta -= 2.0f*dt;
-		if(GetAsyncKeyState('J') & 0x8000)	theta += 2.0f*dt;
-		if(GetAsyncKeyState('I') & 0x8000)	phi -= 2.0f*dt;
-		if(GetAsyncKeyState('K') & 0x8000)	phi += 2.0f*dt;
+		if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	theta -= 2.0f*dt;
+		if(GetAsyncKeyState(VK_LEFT) & 0x8000)	theta += 2.0f*dt;
+		if(GetAsyncKeyState(VK_UP) & 0x8000)	phi -= 2.0f*dt;
+		if(GetAsyncKeyState(VK_DOWN) & 0x8000)	phi += 2.0f*dt;
 		//Don't need for First Person
 		//if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
 		//if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;
