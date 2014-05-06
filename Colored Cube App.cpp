@@ -58,6 +58,8 @@ private:
 	void updateControls(float dt);
 	void updateL1(float dt);
 	void updateL2(float dt);
+	void updateL3(float dt);
+	void updateL4(float dt);
 	void updateLose(float dt);
 	void updateWin(float dt);
 	void updateLights();
@@ -114,6 +116,9 @@ private:
 
 	int numLightObjects;
 	int numBatteries;
+
+	int l3Ghosts;
+	int ghostsKilled;
 
 	Origin origin;
 	int oldBLevel;
@@ -232,6 +237,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	score = 0;
 	timer = 30;
 	lightsAdded = 0;
+	l3Ghosts = 10;
+	ghostsKilled = 0;
 	perspective = false;
 	D3DXMatrixIdentity(&mView);
 	D3DXMatrixIdentity(&mProj);
@@ -550,6 +557,14 @@ void ColoredCubeApp::updateScene(float dt)
 		updateL2(dt);
 		updateLights();
 		break;
+	case level3:
+		updateL3(dt);
+		updateLights();
+		break;
+	case level4:
+		updateL3(dt);
+		updateLights();
+		break;
 	case gameover:
 		updateLose(dt);
 		lights[0] = ambientLighting;
@@ -654,10 +669,11 @@ void ColoredCubeApp::drawScene()
 	}
 
 	//draw the end cube
-	endCube.draw(mView,mProj,mTech);
+	if(gamestate == level2)
+		endCube.draw(mView,mProj,mTech);
 
 	//draw the origin
-	origin.draw(mView, mProj, mTech);
+	//origin.draw(mView, mProj, mTech);
 	
 	//draw "crumbs" placed by player
 	for(int i = 0; i < maxBread; i++)
@@ -683,9 +699,8 @@ void ColoredCubeApp::drawScene()
 	
 	player.draw(mView,mProj,mTech);
 
-	//batteryObject.draw(mView,mProj,mTechColor2);
-	//player.draw(mView,mProj,mTechColor2);
-	ghosts.draw(mView,mProj,mTech);
+	if(gamestate == level2 || gamestate == level3)
+		ghosts.draw(mView,mProj,mTech);
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
@@ -728,10 +743,11 @@ void ColoredCubeApp::updateL1(float dt)
 	{
 		audio->playCue(BATTERY_DIE);
 	}
+	std::wostringstream outs; 
 	oldBLevel = flashLightObject.getPowerLevel();
 	auto oldP = player.getPosition();
-	timer -= dt;
-	std::wostringstream outs; 
+	//timer -= dt;
+
 	//update the camera
 	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
 	//move the player
@@ -808,6 +824,7 @@ void ColoredCubeApp::updateL1(float dt)
 	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
 	outs << "\nKeys Remaining: " << (totalKeys-currentKeys);
 	mTimer = outs.str();
 
@@ -914,6 +931,7 @@ void ColoredCubeApp::updateL2(float dt)
 	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
 	mTimer = outs.str();
 
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
@@ -948,6 +966,133 @@ void ColoredCubeApp::updateL2(float dt)
 	{
 		goal = true;
 	}
+}
+
+void ColoredCubeApp::updateL3(float dt)
+{
+	std::wostringstream outs;
+	outs.precision(2);
+	outs << L"Health: " << player.getHealth() << L"\n";
+	outs.precision(3);
+	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	outs << "\nGhosts remaining: " << l3Ghosts - ghostsKilled;
+	mTimer = outs.str();
+
+	auto oldP = player.getPosition();
+	//timer -= dt;
+
+	//update the camera
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
+	//move the player
+	camera.movePlayer(player,30,camera.getTarget(),perspective);
+	player.update(dt);
+	Location playerLoc;
+	playerLoc.x = player.getPosition().x;
+	playerLoc.z = player.getPosition().z;
+	//collision detection
+	if(player.getPosition()!=oldP)
+	{
+		if(maze.collided(playerLoc))
+		{
+			player.setPosition(oldP);
+			player.setVelocity(Vector3(0,0,0));
+			player.update(dt);
+		}
+	}
+
+	flashLightObject.update(dt);
+	
+	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
+	{
+		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
+		int i = 0;
+	}
+
+	//orientating the flashlight
+	if(flashLightObject.lightSource.dir!=camera.getTarget())
+	{
+		//vectors for caluclating z-rotation
+		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
+		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
+		//vectors for calculating y-rotation
+		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
+		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
+		//vectors for calculating x-rotation
+		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
+		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
+
+		float xAngle = flashLightObject.getRotation().x;
+		float yAngle = flashLightObject.getRotation().y;
+		float zAngle = flashLightObject.getRotation().z;
+		float topEquation;
+		float bottomEquation;
+
+		topEquation = Dot2(&cameraXY,&startXY);
+		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
+		if(bottomEquation>0)
+		{
+			zAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraXZ,&startXZ);
+		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
+		if(bottomEquation>0)
+		{
+			yAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraYZ,&startYZ);
+		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
+		if(bottomEquation>0)
+		{
+			xAngle+=acos((topEquation/bottomEquation));
+		}
+
+		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
+		flashLightObject.lightSource.dir = camera.getTarget();
+	}
+
+	maze.update(dt);
+
+	ghosts.update(dt,&player,camera.getTarget(),perspective);
+	//ghost collision detection
+	
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		//player gets hit by a ghost
+		if(player.collided(&ghosts.getEnemies()[i]))
+		{
+			player.setHealth(player.getHealth()-1);
+			lights[1].ambient = hurtLight;
+			//make flash take longer
+			ghosts.getEnemies()[i].setInActive();
+			audio->playCue(P_HIT);
+		}
+	}
+	//flashlight ghost attack
+	if(flashLightObject.getOn())
+	{
+		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		{
+			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+			{
+				if(ghosts.getEnemies()[i].decreaseHealth())
+					ghostsKilled++;
+				audio->playCue(G_HIT);
+			}
+		}
+	}
+	//win scenario
+	if(ghostsKilled>=l3Ghosts)
+	{
+		goal = true;
+	}
+}
+
+void ColoredCubeApp::updateL4(float dt)
+{
+
 }
 
 void ColoredCubeApp::updateLose(float dt)
@@ -1058,22 +1203,31 @@ void ColoredCubeApp::updateGameState()
 {
        if(gamestate == title && (GetAsyncKeyState('E') & 0x8000))
        {
-              gamestate = controls;
+			gamestate = controls;
        }
 	   if(gamestate == controls && (GetAsyncKeyState('G') & 0x8000))
        {
-              gamestate = level1;
+            gamestate = level1;
        }
        if(gamestate == level1 && (currentKeys==totalKeys||(GetAsyncKeyState('P') & 0x8000)))
        {
-              gamestate = level2;
-			  reloadLevel(20,20);
+            gamestate = level2;
+			reloadLevel(10,10);
        }
-       if(gamestate == level2 && goal)
+       if(gamestate == level2 && goal ||(GetAsyncKeyState('Q') & 0x8000))
        {
-              gamestate = win;
+            gamestate = level3;
+			reloadLevel(20,20);
        }
-       if((gamestate == level1 || gamestate == level2) && (player.getHealth() <= 0||(GetAsyncKeyState('Q') & 0x8000)))
+	   if(gamestate == level3 && goal)
+	   {
+			gamestate = win;
+	   }
+	   if(gamestate == level4 && goal)
+	   {
+		   gamestate = win;//WOOHOO!!!
+	   }
+       if((player.getHealth() <= 0))
        {
               gamestate = gameover;
 			  ambientLighting.ambient = ambientLight;
