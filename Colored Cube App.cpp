@@ -68,6 +68,8 @@ private:
 	void drawLose();
 	void drawWin();
 
+	void dropBread(Vector3 pos);
+
 	Gamestates gamestate;
 	Audio* audio;
 	playerControls camera;
@@ -82,6 +84,9 @@ private:
 	Box mBox;
 	Maze maze;
 	bool perspective;
+
+	int breadNumber;
+	int maxBread;
 
 	bool goal;
 	int currentKeys, totalKeys;
@@ -105,6 +110,8 @@ private:
 	BatteryObject batteries[20];
 	LightObject lamps[30];
 
+	GameObject breadCrumbs[30];
+
 	int numLightObjects;
 	int numBatteries;
 
@@ -118,6 +125,7 @@ private:
 	int mazeZ;
 
 	bool perspectiveDebounced;
+	bool breadDebounced;
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
@@ -211,7 +219,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	{
 		totalLights[i] = 0;
 	}
-
+	breadDebounced = false;
 	perspectiveDebounced = false;
 	goal = false;
 	currentKeys = 0;
@@ -340,6 +348,9 @@ void ColoredCubeApp::initApp()
 
 	//testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
 
+	breadNumber = 0;
+	maxBread = 30;
+
 	line.init(md3dDevice, 1.0f, DARKBROWN);
 	line2.init(md3dDevice, 1.0f, RED);
 	line3.init(md3dDevice, 1.0f, GREEN);
@@ -429,6 +440,14 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	for(int i = 0; i < maxBread; i++)
+	{
+		breadCrumbs[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
+		breadCrumbs[i].setInActive();
+		breadCrumbs[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
+		breadCrumbs[i].setTex(boxTexture,iceSpecMap);
+	}
+
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
     audio = new Audio();
@@ -469,6 +488,16 @@ void ColoredCubeApp::updateScene(float dt)
 	updateGameState();
 	endCube.update(dt);
 
+	if(!breadDebounced && GetAsyncKeyState('B') & 0x8000)
+	{
+		dropBread(player.getPosition());
+		breadDebounced = true;
+	}
+	if(!(GetAsyncKeyState('B') & 0x8000))
+	{
+		breadDebounced = false;
+	}
+
 	if(!perspectiveDebounced && GetAsyncKeyState('Y') & 0x8000)
 	{
 		perspective = !perspective;
@@ -495,6 +524,12 @@ void ColoredCubeApp::updateScene(float dt)
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
 		}
+	}
+
+	for(int i = 0; i < maxBread; i++)
+	{
+		if(breadCrumbs[i].getActiveState())
+			breadCrumbs[i].update(dt);
 	}
 
 	switch(gamestate)
@@ -624,6 +659,15 @@ void ColoredCubeApp::drawScene()
 	//draw the origin
 	origin.draw(mView, mProj, mTech);
 	
+	//draw "crumbs" placed by player
+	for(int i = 0; i < maxBread; i++)
+	{
+		if(breadCrumbs[i].getActiveState())
+		{
+			breadCrumbs[i].draw(mView,mProj,mTech);
+		}
+	}
+
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].draw(mView,mProj,mTech);
@@ -789,6 +833,7 @@ void ColoredCubeApp::updateL2(float dt)
 	{
 		audio->playCue(BATTERY_DIE);
 	}
+
 	oldBLevel = flashLightObject.getPowerLevel();
 	auto oldP = player.getPosition();
 	timer -= dt;
@@ -1044,6 +1089,13 @@ void ColoredCubeApp::updateGameState()
 
  void ColoredCubeApp::reloadLevel(int x, int z)
 {
+	//reset breadcrumbs
+	breadNumber = 0;
+	for(int i = 0; i < maxBread; i++)
+	{
+		breadCrumbs[i].setInActive();
+	}
+
 	mazeX = x;
 	mazeZ = z;
 	currentKeys = 0;
@@ -1112,3 +1164,12 @@ void ColoredCubeApp::updateGameState()
 		batteries[i].setActive();
 	}
 }
+
+ void ColoredCubeApp::dropBread(Vector3 pos)
+ {
+	 if(breadNumber>=maxBread)
+		 return;
+	 breadCrumbs[breadNumber].setPosition(pos);
+	 breadCrumbs[breadNumber].setActive();
+	 breadNumber++;
+ }
