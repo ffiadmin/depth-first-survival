@@ -71,6 +71,8 @@ private:
 
 	void shootProjectile(Vector3 pos);
 
+	void manageMazeDenizen(GameObject, float, Maze&);
+
 	Gamestates gamestate;
 	Gamestates nextState;
 	Audio* audio;
@@ -585,7 +587,26 @@ void ColoredCubeApp::updateScene(float dt)
 	for(int i = 0; i < maxProjectile; i++)
 	{
 		if(projectile[i].getActiveState())
+		{
+			auto oldP = projectile[i].getPosition();
 			projectile[i].update(dt);
+			Location playerLoc;
+			playerLoc.x = projectile[i].getPosition().x;
+			playerLoc.z = projectile[i].getPosition().z;
+			//collision detection
+			if(projectile[i].getPosition()!=oldP)
+			{
+				if(maze.collided(playerLoc))
+				{
+					projectile[i].setPosition(oldP);
+					projectile[i].setVelocity(Vector3(0,0,0));
+					projectile[i].setInActive();
+					projectile[i].update(dt);
+				}
+			}
+		}
+		
+		//projectile[i].update(dt);
 	}
 
 	switch(gamestate)
