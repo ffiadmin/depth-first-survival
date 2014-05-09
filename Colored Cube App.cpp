@@ -69,6 +69,8 @@ private:
 
 	void dropBread(Vector3 pos);
 
+	void shootProjectile(Vector3 pos);
+
 	Gamestates gamestate;
 	Gamestates nextState;
 	Audio* audio;
@@ -86,7 +88,9 @@ private:
 	bool perspective;
 
 	int breadNumber;
+	int projectileNum;
 	int maxBread;
+	int maxProjectile;
 
 	bool goal;
 	int currentKeys, totalKeys;
@@ -112,6 +116,8 @@ private:
 
 	GameObject breadCrumbs[30];
 
+	GameObject projectile[10];
+
 	int numLightObjects;
 	int numBatteries;
 
@@ -129,6 +135,8 @@ private:
 
 	bool perspectiveDebounced;
 	bool breadDebounced;
+	bool projectileDebounced;
+	bool splashScreenDebounced;
 
 	ID3D10Effect* mFX;
 	ID3D10Effect* mFXColor;
@@ -228,7 +236,9 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 		totalLights[i] = 0;
 	}
 	breadDebounced = false;
+	projectileDebounced = false;
 	perspectiveDebounced = false;
+	splashScreenDebounced = false;
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
@@ -369,6 +379,8 @@ void ColoredCubeApp::initApp()
 
 	breadNumber = 0;
 	maxBread = 30;
+	projectileNum = 10;
+	maxProjectile = 10;
 
 	line.init(md3dDevice, 1.0f, DARKBROWN);
 	line2.init(md3dDevice, 1.0f, RED);
@@ -467,6 +479,14 @@ void ColoredCubeApp::initApp()
 		breadCrumbs[i].setTex(ceilingTexture,iceSpecMap);
 	}
 
+	for(int i = 0; i < maxProjectile; i++)
+	{
+		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
+		projectile[i].setInActive();
+		projectile[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
+		projectile[i].setTex(ceilingTexture,iceSpecMap);
+	}
+
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
     audio = new Audio();
@@ -507,23 +527,33 @@ void ColoredCubeApp::updateScene(float dt)
 	updateGameState();
 	endCube.update(dt);
 
-	if(!breadDebounced && GetAsyncKeyState('B') & 0x8000)
+	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
 		dropBread(player.getPosition());
 		breadDebounced = true;
 	}
-	if(!(GetAsyncKeyState('B') & 0x8000))
+	if(!(GetAsyncKeyState('C') & 0x8000))
 	{
 		breadDebounced = false;
 	}
 
-	if(!perspectiveDebounced && GetAsyncKeyState('Y') & 0x8000)
+	if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
+	{
+		shootProjectile(player.getPosition());
+		projectileDebounced = true;
+	}
+	if(!(GetAsyncKeyState('G') & 0x8000))
+	{
+		projectileDebounced = false;
+	}
+
+	if(!perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
 	{
 		perspective = !perspective;
 		perspectiveDebounced = true;
 		//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
 	}
-	if(!(GetAsyncKeyState('Y') & 0x8000))
+	if(!(GetAsyncKeyState('R') & 0x8000))
 	{
 		perspectiveDebounced = false;
 		//ambientLighting.ambient = ambientLight;
@@ -542,6 +572,7 @@ void ColoredCubeApp::updateScene(float dt)
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
+			projectileNum--;
 		}
 	}
 
@@ -549,6 +580,12 @@ void ColoredCubeApp::updateScene(float dt)
 	{
 		if(breadCrumbs[i].getActiveState())
 			breadCrumbs[i].update(dt);
+	}
+
+	for(int i = 0; i < maxProjectile; i++)
+	{
+		if(projectile[i].getActiveState())
+			projectile[i].update(dt);
 	}
 
 	switch(gamestate)
@@ -697,6 +734,14 @@ void ColoredCubeApp::drawScene()
 		if(breadCrumbs[i].getActiveState())
 		{
 			breadCrumbs[i].draw(mView,mProj,mTech);
+		}
+	}
+
+	for(int i = 0; i < maxProjectile; i++)
+	{
+		if(projectile[i].getActiveState())
+		{
+			projectile[i].draw(mView,mProj,mTech);
 		}
 	}
 
@@ -1185,16 +1230,22 @@ void ColoredCubeApp::buildVertexLayouts()
 
 void ColoredCubeApp::updateGameState()
 {
-       if(gamestate == title && (GetAsyncKeyState('E') & 0x8000))
-       {
+		if(gamestate == title && (GetAsyncKeyState('E') & 0x8000) && !splashScreenDebounced)
+		{
 			gamestate = controls;
-       }
-	   if(gamestate == controls && (GetAsyncKeyState('G') & 0x8000))
+			splashScreenDebounced = true;
+		}
+	   if(gamestate == controls && (GetAsyncKeyState('E') & 0x8000) && !splashScreenDebounced)
        {
             gamestate = splash;
 			nextState = level1;
 			splashScreen = l1Splash;
+			splashScreenDebounced = true;
        }
+		if(!(GetAsyncKeyState('E') & 0x8000))
+		{
+			splashScreenDebounced = false;
+		}
        if(gamestate == level1 && (currentKeys==totalKeys||(GetAsyncKeyState('P') & 0x8000)))
        {
 		    gamestate = splash;
@@ -1240,9 +1291,15 @@ void ColoredCubeApp::updateGameState()
 {
 	//reset breadcrumbs
 	breadNumber = 0;
+	//Reset projectiles
+	projectileNum = 10;
 	for(int i = 0; i < maxBread; i++)
 	{
 		breadCrumbs[i].setInActive();
+	}
+	for(int i = 0; i < maxProjectile; i++)
+	{
+		projectile[i].setInActive();
 	}
 
 	mazeX = x;
@@ -1320,5 +1377,18 @@ void ColoredCubeApp::updateGameState()
 		 return;
 	 breadCrumbs[breadNumber].setPosition(pos);
 	 breadCrumbs[breadNumber].setActive();
+	 //breadCrumbs[breadNumber].setVelocity(camera.movementFP(camera.getTarget(),perspective));
+	 //camera.moveObject(breadCrumbs[breadNumber],20.0f, camera.getTarget(),perspective);
 	 breadNumber++;
+ }
+
+  void ColoredCubeApp::shootProjectile(Vector3 pos)
+ {
+	 if(projectileNum>=maxProjectile)
+		 return;
+	 projectile[projectileNum].setPosition(pos);
+	 projectile[projectileNum].setActive();
+	 //breadCrumbs[breadNumber].setVelocity(camera.movementFP(camera.getTarget(),perspective));
+	 camera.moveObject(projectile[projectileNum],20.0f, camera.getTarget(),perspective);
+	 projectileNum++;
  }
