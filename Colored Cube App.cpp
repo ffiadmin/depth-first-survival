@@ -60,6 +60,7 @@ private:
 	void updateL3(float dt);
 	void updateL4(float dt);
 	void updateSplashScreen(float dt,ID3D10ShaderResourceView* screen);
+	void updateTransition(float dt);
 	void updateLights();
 	void drawTitle();
 	void drawControls();
@@ -76,8 +77,10 @@ private:
 
 	ID3D10BlendState* mTransparentBS;
 
+	float sceneAlpha;
 	Gamestates gamestate;
 	Gamestates nextState;
+	Gamestates transitionState;
 	Audio* audio;
 	playerControls camera;
 	Light lights[10];
@@ -267,6 +270,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	D3DXMatrixIdentity(&mWVP); 
 	oldBLevel = 0;
 	gamestate = title;
+	sceneAlpha = 1.0f;
 }
 
 ColoredCubeApp::~ColoredCubeApp()
@@ -564,6 +568,91 @@ void ColoredCubeApp::updateScene(float dt)
 
 	billboard.update(dt);
 
+	//player updates
+	//sceneAlpha-=dt/100;
+	//detect battery level
+	//maybe give gameObjects an audio pointer so they can play cues when necessary...
+	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
+	{
+		audio->playCue(BATTERY_DIE);
+	}
+
+	oldBLevel = flashLightObject.getPowerLevel();
+	auto oldP = player.getPosition();
+	//timer -= dt;
+
+	//update the camera
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
+	//move the player
+	camera.movePlayer(player,30,camera.getTarget(),perspective);
+	player.update(dt);
+	Location playerLoc;
+	playerLoc.x = player.getPosition().x;
+	playerLoc.z = player.getPosition().z;
+	//collision detection
+	if(player.getPosition()!=oldP)
+	{
+		if(maze.collided(playerLoc))
+		{
+			player.setPosition(oldP);
+			player.setVelocity(Vector3(0,0,0));
+			player.update(dt);
+		}
+	}
+	flashLightObject.update(dt);
+	
+	maze.update(dt);
+	
+	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
+	{
+		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
+		int i = 0;
+	}
+
+	//orientating the flashlight
+	if(flashLightObject.lightSource.dir!=camera.getTarget())
+	{
+		//vectors for caluclating z-rotation
+		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
+		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
+		//vectors for calculating y-rotation
+		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
+		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
+		//vectors for calculating x-rotation
+		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
+		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
+
+		float xAngle = flashLightObject.getRotation().x;
+		float yAngle = flashLightObject.getRotation().y;
+		float zAngle = flashLightObject.getRotation().z;
+		float topEquation;
+		float bottomEquation;
+
+		topEquation = Dot2(&cameraXY,&startXY);
+		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
+		if(bottomEquation>0)
+		{
+			zAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraXZ,&startXZ);
+		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
+		if(bottomEquation>0)
+		{
+			yAngle+=acos((topEquation/bottomEquation));
+		}
+
+		topEquation = Dot2(&cameraYZ,&startYZ);
+		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
+		if(bottomEquation>0)
+		{
+			xAngle+=acos((topEquation/bottomEquation));
+		}
+
+		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
+		flashLightObject.lightSource.dir = camera.getTarget();
+	}
+
 	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
 		dropBread(player.getPosition());
@@ -679,7 +768,20 @@ void ColoredCubeApp::updateScene(float dt)
 	case splash:
 		updateSplashScreen(dt,splashScreen);
 		lights[0] = ambientLighting;
+	case transition:
+		updateTransition(dt);
+		lights[1] = ambientLighting;
 		break;
+	}
+}
+
+void ColoredCubeApp::updateTransition(float dt)
+{
+	sceneAlpha-=dt/5;
+	if(sceneAlpha<=0)
+	{
+		gamestate = transitionState;
+		sceneAlpha = 0.01f;
 	}
 }
 
@@ -744,14 +846,22 @@ void ColoredCubeApp::drawScene()
 	// restore the default states by passing null.
 	md3dDevice->OMSetDepthStencilState(0, 0);
 	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
 
     md3dDevice->IASetInputLayout(mVertexLayout);
 
 	mfxEyePosVar->SetRawValue(&player.getPosition(), 0, sizeof(D3DXVECTOR3));
 
-	//set alpha value
-	mfxAlpha->SetFloat(0.4f);
+	if(gamestate==transition || gamestate == splash)
+	{
+		md3dDevice->OMSetBlendState(mTransparentBS, blendFactors, 0xffffffff);
+		mfxAlpha->SetFloat(sceneAlpha);		
+	}
+	else
+	{
+		//set alpha value for ghosts
+		mfxAlpha->SetFloat(0.4f);
+		md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
+	}
 
 	//set the number of lights to use
 	mfxNumLights->SetInt(lightsGoingInShader);
@@ -834,91 +944,9 @@ void ColoredCubeApp::drawScene()
 
 void ColoredCubeApp::updateL1(float dt)
 {
+	std::wostringstream outs; 
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
-		
-	//detect battery level
-	//maybe give gameObjects an audio pointer so they can play cues when necessary...
-	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
-	{
-		audio->playCue(BATTERY_DIE);
-	}
-	std::wostringstream outs; 
-	oldBLevel = flashLightObject.getPowerLevel();
-	auto oldP = player.getPosition();
-	//timer -= dt;
-
-	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
-	//move the player
-	camera.movePlayer(player,30,camera.getTarget(),perspective);
-	player.update(dt);
-	Location playerLoc;
-	playerLoc.x = player.getPosition().x;
-	playerLoc.z = player.getPosition().z;
-	//collision detection
-	if(player.getPosition()!=oldP)
-	{
-		if(maze.collided(playerLoc))
-		{
-			player.setPosition(oldP);
-			player.setVelocity(Vector3(0,0,0));
-			player.update(dt);
-		}
-	}
-	flashLightObject.update(dt);
-	
-	maze.update(dt);
-	
-	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
-	{
-		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
-		int i = 0;
-	}
-
-	//orientating the flashlight
-	if(flashLightObject.lightSource.dir!=camera.getTarget())
-	{
-		//vectors for caluclating z-rotation
-		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
-		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
-		//vectors for calculating y-rotation
-		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
-		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
-		//vectors for calculating x-rotation
-		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
-		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
-
-		float xAngle = flashLightObject.getRotation().x;
-		float yAngle = flashLightObject.getRotation().y;
-		float zAngle = flashLightObject.getRotation().z;
-		float topEquation;
-		float bottomEquation;
-
-		topEquation = Dot2(&cameraXY,&startXY);
-		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
-		if(bottomEquation>0)
-		{
-			zAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraXZ,&startXZ);
-		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
-		if(bottomEquation>0)
-		{
-			yAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraYZ,&startYZ);
-		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
-		if(bottomEquation>0)
-		{
-			xAngle+=acos((topEquation/bottomEquation));
-		}
-
-		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
-		flashLightObject.lightSource.dir = camera.getTarget();
-	}
 
 	outs.precision(2);
 	outs << L"Health: " << player.getHealth() << L"\n";
@@ -944,89 +972,9 @@ void ColoredCubeApp::updateL3(float dt)
 {
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 
-	//detect battery level
-	//maybe give gameObjects an audio pointer so they can play cues when necessary...
-	if(oldBLevel!=0 && flashLightObject.getPowerLevel()<=0)
-	{
-		audio->playCue(BATTERY_DIE);
-	}
-
-	oldBLevel = flashLightObject.getPowerLevel();
-	auto oldP = player.getPosition();
 	timer -= dt;
 	std::wostringstream outs; 
-	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
-	//move the player
-	camera.movePlayer(player,30,camera.getTarget(),perspective);
-	player.update(dt);
-	Location playerLoc;
-	playerLoc.x = player.getPosition().x;
-	playerLoc.z = player.getPosition().z;
-	//collision detection
-	if(player.getPosition()!=oldP)
-	{
-		if(maze.collided(playerLoc))
-		{
-			player.setPosition(oldP);
-			player.setVelocity(Vector3(0,0,0));
-			player.update(dt);
-		}
-	}
-	flashLightObject.update(dt);
-		
-	maze.update(dt);
 	
-	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
-	{
-		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
-		int i = 0;
-	}
-
-	//orientating the flashlight
-	if(flashLightObject.lightSource.dir!=camera.getTarget())
-	{
-		//vectors for caluclating z-rotation
-		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
-		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
-		//vectors for calculating y-rotation
-		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
-		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
-		//vectors for calculating x-rotation
-		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
-		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
-
-		float xAngle = flashLightObject.getRotation().x;
-		float yAngle = flashLightObject.getRotation().y;
-		float zAngle = flashLightObject.getRotation().z;
-		float topEquation;
-		float bottomEquation;
-
-		topEquation = Dot2(&cameraXY,&startXY);
-		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
-		if(bottomEquation>0)
-		{
-			zAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraXZ,&startXZ);
-		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
-		if(bottomEquation>0)
-		{
-			yAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraYZ,&startYZ);
-		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
-		if(bottomEquation>0)
-		{
-			xAngle+=acos((topEquation/bottomEquation));
-		}
-
-		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
-		flashLightObject.lightSource.dir = camera.getTarget();
-	}
-
 	outs.precision(2);
 	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
@@ -1084,82 +1032,6 @@ void ColoredCubeApp::updateL2(float dt)
 	outs << "\nGhosts remaining: " << l3Ghosts - ghostsKilled;
 	mTimer = outs.str();
 
-	auto oldP = player.getPosition();
-	//timer -= dt;
-
-	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
-	//move the player
-	camera.movePlayer(player,30,camera.getTarget(),perspective);
-	player.update(dt);
-	Location playerLoc;
-	playerLoc.x = player.getPosition().x;
-	playerLoc.z = player.getPosition().z;
-	//collision detection
-	if(player.getPosition()!=oldP)
-	{
-		if(maze.collided(playerLoc))
-		{
-			player.setPosition(oldP);
-			player.setVelocity(Vector3(0,0,0));
-			player.update(dt);
-		}
-	}
-
-	flashLightObject.update(dt);
-	
-	if(flashLightObject.getPosition()!=(player.getPosition()+(camera.getTarget()*5)))
-	{
-		flashLightObject.setPosition(player.getPosition() + camera.getTarget()*5);
-		int i = 0;
-	}
-
-	//orientating the flashlight
-	if(flashLightObject.lightSource.dir!=camera.getTarget())
-	{
-		//vectors for caluclating z-rotation
-		Vector2 cameraXY = Vector2(camera.getTarget().x,camera.getTarget().y);
-		Vector2 startXY = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.y);
-		//vectors for calculating y-rotation
-		Vector2 cameraXZ = Vector2(camera.getTarget().x,camera.getTarget().z);
-		Vector2 startXZ = Vector2(flashLightObject.lightSource.dir.x,flashLightObject.lightSource.dir.z);
-		//vectors for calculating x-rotation
-		Vector2 cameraYZ = Vector2(camera.getTarget().y,camera.getTarget().z);
-		Vector2 startYZ = Vector2(flashLightObject.lightSource.dir.y,flashLightObject.lightSource.dir.z);
-
-		float xAngle = flashLightObject.getRotation().x;
-		float yAngle = flashLightObject.getRotation().y;
-		float zAngle = flashLightObject.getRotation().z;
-		float topEquation;
-		float bottomEquation;
-
-		topEquation = Dot2(&cameraXY,&startXY);
-		bottomEquation = Length2(&cameraXY)*Length2(&startXY);
-		if(bottomEquation>0)
-		{
-			zAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraXZ,&startXZ);
-		bottomEquation = Length2(&cameraXZ)*Length2(&startXZ);
-		if(bottomEquation>0)
-		{
-			yAngle+=acos((topEquation/bottomEquation));
-		}
-
-		topEquation = Dot2(&cameraYZ,&startYZ);
-		bottomEquation = Length2(&cameraYZ)*Length2(&startYZ);
-		if(bottomEquation>0)
-		{
-			xAngle+=acos((topEquation/bottomEquation));
-		}
-
-		flashLightObject.setRotation(Vector3(xAngle,yAngle,zAngle));
-		flashLightObject.lightSource.dir = camera.getTarget();
-	}
-
-	maze.update(dt);
-
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
 	//ghost collision detection
 	
@@ -1208,6 +1080,10 @@ void ColoredCubeApp::updateL4(float dt)
 void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* screen)
 {
 	ambientLighting.ambient = D3DXCOLOR(1,1,1,1);
+	if(sceneAlpha<0.9)
+	{
+		sceneAlpha+=dt;
+	}
 	float rad = 0.0f;
 	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
 	//set ceiling texture here
@@ -1314,7 +1190,7 @@ void ColoredCubeApp::updateGameState()
 		}
 	   if(gamestate == controls && (GetAsyncKeyState('E') & 0x8000) && !splashScreenDebounced)
        {
-            gamestate = splash;
+		   gamestate = splash;
 			nextState = level1;
 			splashScreen = l1Splash;
 			splashScreenDebounced = true;
@@ -1325,23 +1201,30 @@ void ColoredCubeApp::updateGameState()
 		}
        if(gamestate == level1 && (currentKeys==totalKeys||(GetAsyncKeyState('P') & 0x8000)))
        {
-		    gamestate = splash;
+		   lights[1] = ambientLighting;
+		    gamestate = transition;
+			transitionState = splash;
             nextState = level2;
-			reloadLevel(10,10);
 			splashScreen = l2Splash;
+			sceneAlpha = 1.0f;
        }
        if(gamestate == level2 && goal ||(GetAsyncKeyState('Q') & 0x8000))
        {
 		    goal = false;
+			lights[1] = ambientLighting;
             nextState = level3;
-			gamestate = splash;
-			reloadLevel(10,10);
+		    gamestate = transition;
+			transitionState = splash;
 			splashScreen = l3Splash;
+			sceneAlpha = 1.0f;
        }
 	   if(gamestate == level3 && goal)
 	   {
 		   goal = false;
-			gamestate = win;
+		   gamestate = transition;
+		   lights[1] = ambientLighting;
+			transitionState = win;
+			sceneAlpha = 1.0f;
 	   }
 	   if(gamestate == level4 && goal)
 	   {
@@ -1351,6 +1234,7 @@ void ColoredCubeApp::updateGameState()
 	   {
 		   gamestate = nextState;
 		   maze.setCeilTex(ceilingTexture,brickSpecMap);
+		   reloadLevel(10,10);
 	   }
        if((player.getHealth() <= 0))
        {
