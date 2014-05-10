@@ -11,6 +11,7 @@ GameObject::GameObject()
 	mfxSpecMapVar = 0;
 	mDiffuseMapRV = 0;
 	mSpecMapRV = 0;
+	mfxViewProjVar = 0;
 }
 
 GameObject::~GameObject()
@@ -57,6 +58,11 @@ void GameObject::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechn
 	mfxWVPVar->SetMatrix((float*)&mWVP);
 	//set the world matrix
 	mfxWorldVar->SetMatrix((float*)&world);
+
+	if(mfxViewProjVar)
+	{
+		mfxViewProjVar->SetMatrix((float*)projection);
+	}
 
 	//sets the technique
 	setMTech(technique);

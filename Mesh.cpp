@@ -153,7 +153,7 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 		indices.push_back(vertices.size() + i);
 		indices.push_back(vertices.size());
 	}
-
+	float alpha = 1.0f;
 	//put in polygon base points
 	Vertex v;
 	Vector3 edge1 = (base[numPoints-2]-base[0]);
@@ -161,8 +161,8 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 	Vector3 norm;
 	Cross(&norm,&edge1,&edge2);
 	v.pos = Vector3(base[0].x,base[0].y,base[0].z);
-	v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
-	v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
+	v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
+	v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
 	//have to calculate the normal for the first and last point slightly differently because they are the same point
 	Normalize(&v.normal,&norm);
 	v.texC = Vector2(0.0f,(sectionNumber*(360/numSlices)));
@@ -177,8 +177,8 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 		Cross(&norm,&edge1,&edge2);
 		Normalize(&v.normal,&norm);
 		v.texC = Vector2(1.0f,(sectionNumber*((360/(numSlices))*2)));
-		v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
-		v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
+		v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
+		v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
 		vertices.push_back(v);
 		mNumVertices++;
 	}
@@ -188,8 +188,8 @@ void Mesh::makePolygon(Vector3 base[], int numPoints, int sectionNumber)
 	Cross(&norm,&edge1,&edge2);
 	Normalize(&v.normal,&norm);
 	v.texC = Vector2(1.0f,(sectionNumber*(360/numSlices)));
-	v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
-	v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,1.0f);
+	v.diffuse = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
+	v.spec = D3DXCOLOR(0.0f,1.0f,1.0f,alpha);
 	vertices.push_back(v);
 	mNumVertices++;
 }

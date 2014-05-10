@@ -21,6 +21,7 @@ void EnemyObject::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D
 	ghostLight.pos = D3DXVECTOR3(10,20,10);
 	ghostLight.dir = D3DXVECTOR3(0, -1, 0);	
 	ghostLight.lightType.x = 2;
+	hit = false;
 }
 
 void EnemyObject::update(float dt, GameObject* player, Vector3 playerDir, bool topDown)

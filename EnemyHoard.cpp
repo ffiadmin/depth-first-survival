@@ -26,8 +26,13 @@ void EnemyHoard::init(ID3D10Device* device, ID3D10EffectMatrixVariable* fx,ID3D1
 
 void EnemyHoard::draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique)
 {
+	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
 	for(int i = 0; i < numEnemies; i++)
 	{
+		if(!enemies[i].getHit())
+			enemies[i].getGeo()->md3dDevice->OMSetBlendState(mTransparentBS, blendFactors, 0xffffffff);
+		else
+			enemies[i].getGeo()->md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
 		enemies[i].draw(model,projection,technique);
 	}
 }

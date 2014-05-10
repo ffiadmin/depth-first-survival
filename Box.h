@@ -7,6 +7,7 @@
 
 #include "d3dUtil.h"
 #include "Geometry.h"
+#include "Vertex.h"
 
 class Box : public Geometry
 {

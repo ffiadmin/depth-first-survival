@@ -16,6 +16,7 @@
 #include "d3dApp.h"
 #include "Box.h"
 #include "GameObject.h"
+#include "Billboard.h"
 #include "flashLightObject.h"
 #include "BatteryObject.h"
 #include "Line.h"
@@ -73,6 +74,8 @@ private:
 
 	void manageMazeDenizen(GameObject, float, Maze&);
 
+	ID3D10BlendState* mTransparentBS;
+
 	Gamestates gamestate;
 	Gamestates nextState;
 	Audio* audio;
@@ -86,6 +89,7 @@ private:
 	Quad quad1;
 	Line line, line2, line3;
 	Box mBox;
+	Billboard testBoard;
 	Maze maze;
 	bool perspective;
 
@@ -103,6 +107,7 @@ private:
 	Mesh key;
 	GameObject keyObject[10];
 
+	GameObject billboard;
 	GameObject player;
 	GameObject endCube;
 	Light endLight;
@@ -141,9 +146,9 @@ private:
 	bool splashScreenDebounced;
 
 	ID3D10Effect* mFX;
-	ID3D10Effect* mFXColor;
 	ID3D10EffectTechnique* mTech;
 	ID3D10EffectTechnique* mTechColor2;
+	ID3D10EffectTechnique* mTechBillboard;
 	ID3D10InputLayout* mVertexLayout;
 	ID3D10EffectMatrixVariable* mfxWVPVar;
 	//my addition
@@ -153,9 +158,11 @@ private:
 	ID3D10EffectMatrixVariable* mfxWorldVar;
 	ID3D10EffectVariable* mfxEyePosVar;
 	ID3D10EffectVariable* mfxLightVar;
+	ID3D10EffectScalarVariable* mfxAlpha;
 	ID3D10EffectShaderResourceVariable* mfxDiffuseMapVar;
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10EffectMatrixVariable* mfxTexMtxVar;
+	ID3D10EffectMatrixVariable* mfxProjMatrix;
 	ID3D10EffectScalarVariable* mfxNumLights;
 
 	//textures and spec maps
@@ -285,12 +292,27 @@ ColoredCubeApp::~ColoredCubeApp()
 
 	ReleaseCOM(mFX);
 	ReleaseCOM(mVertexLayout);
+	ReleaseCOM(mTransparentBS);
 	//delete testSound;
 }
 
 void ColoredCubeApp::initApp()
 {
 	D3DApp::initApp();
+
+	//create transparent blend state
+	D3D10_BLEND_DESC blendDesc = {0};
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.BlendEnable[0] = true;
+	blendDesc.SrcBlend       = D3D10_BLEND_SRC_ALPHA;
+	blendDesc.DestBlend      = D3D10_BLEND_INV_SRC_ALPHA;
+	blendDesc.BlendOp        = D3D10_BLEND_OP_ADD;
+	blendDesc.SrcBlendAlpha  = D3D10_BLEND_ONE;
+	blendDesc.DestBlendAlpha = D3D10_BLEND_ZERO;
+	blendDesc.BlendOpAlpha   = D3D10_BLEND_OP_ADD;
+	blendDesc.RenderTargetWriteMask[0] = D3D10_COLOR_WRITE_ENABLE_ALL;
+
+	HR(md3dDevice->CreateBlendState(&blendDesc, &mTransparentBS));
 
 	//set up textures and spec maps
 	//brick texture
@@ -377,6 +399,11 @@ void ColoredCubeApp::initApp()
 
 	mBox.init(md3dDevice, 1.0f);
 
+	testBoard.init(md3dDevice,Vector3(0,0,0),Vector2(24,24));
+	billboard.init(&testBoard,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+	billboard.setProjection(mfxProjMatrix);
+	billboard.setTex(boxTexture,standardSpecMap);
+
 	//testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
 
 	breadNumber = 0;
@@ -398,6 +425,8 @@ void ColoredCubeApp::initApp()
 	Location start = maze.getStartPosition();
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x+10,0,start.z+10));
+
+	billboard.setPosition(Vector3(start.x+10,0,start.z+10));
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
@@ -463,8 +492,9 @@ void ColoredCubeApp::initApp()
 		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
-	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.25,0.25,0.25));
-	ghosts.setTex(boxTexture,iceSpecMap);
+	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.75,0.75,0.75));
+	ghosts.setBlend(mTransparentBS);
+	ghosts.setTex(brickTexture,iceSpecMap);
 	ghosts.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	
 	for(int i = 0; i < ghosts.getNumEnemies(); i++)
@@ -513,6 +543,9 @@ void ColoredCubeApp::initApp()
 	/*testSound = new SoundItem(audio,Vector3(0,0,0),50);
 	static string sounds[] = {"gun_sound_effect","Light Bulb Breaking-SoundBible.com-53066515"};
 	testSound->setSounds(sounds,2);*/
+
+	
+
 }
 
 void ColoredCubeApp::onResize()
@@ -528,6 +561,8 @@ void ColoredCubeApp::updateScene(float dt)
 	ambientLighting.ambient = ambientLight;
 	updateGameState();
 	endCube.update(dt);
+
+	billboard.update(dt);
 
 	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
@@ -710,12 +745,17 @@ void ColoredCubeApp::drawScene()
 	md3dDevice->OMSetDepthStencilState(0, 0);
 	float blendFactors[] = {0.0f, 0.0f, 0.0f, 0.0f};
 	md3dDevice->OMSetBlendState(0, blendFactors, 0xffffffff);
+
     md3dDevice->IASetInputLayout(mVertexLayout);
 
 	mfxEyePosVar->SetRawValue(&player.getPosition(), 0, sizeof(D3DXVECTOR3));
 
+	//set alpha value
+	mfxAlpha->SetFloat(0.4f);
+
 	//set the number of lights to use
 	mfxNumLights->SetInt(lightsGoingInShader);
+
 	//throw lights at shader boooom!!!!!!
 	mfxLightVar->SetRawValue(&lights[0], 0, lightsGoingInShader*sizeof(Light));
  
@@ -730,7 +770,7 @@ void ColoredCubeApp::drawScene()
 
 	//draw the maze
 	maze.draw(mTech,mView,mProj);
-	
+
 	//draw the keys
 	if(gamestate == level1)
 	{
@@ -779,8 +819,12 @@ void ColoredCubeApp::drawScene()
 	
 	player.draw(mView,mProj,mTech);
 
+	billboard.draw(mView,mProj,mTechBillboard);
+
 	if(gamestate == level2 || gamestate == level3)
+	{
 		ghosts.draw(mView,mProj,mTech);
+	}
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
 	RECT R = {5, 5, 0, 0};
@@ -1012,8 +1056,13 @@ void ColoredCubeApp::updateL3(float dt)
 		{
 			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 			{
+				ghosts.getEnemies()[i].setHit(true);
 				ghosts.getEnemies()[i].decreaseHealth();
 				audio->playCue(G_HIT);
+			}
+			else
+			{
+				ghosts.getEnemies()[i].setHit(false);
 			}
 		}
 	}
@@ -1133,9 +1182,14 @@ void ColoredCubeApp::updateL2(float dt)
 		{
 			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 			{
+				ghosts.getEnemies()[i].setHit(true);
 				if(ghosts.getEnemies()[i].decreaseHealth())
 					ghostsKilled++;
 				audio->playCue(G_HIT);
+			}
+			else
+			{
+				ghosts.getEnemies()[i].setHit(false);
 			}
 		}
 	}
@@ -1215,15 +1269,18 @@ void ColoredCubeApp::buildFX()
 
 	mTech = mFX->GetTechniqueByName("TexTech");
 	mTechColor2 = mFX->GetTechniqueByName("ColorTech");
+	mTechBillboard = mFX->GetTechniqueByName("BillboardTech");
 	//mTechStatic = mFX->GetTechniqueByName("StaticTech");
 
 	mfxWVPVar        = mFX->GetVariableByName("gWVP")->AsMatrix();
 	mfxWorldVar      = mFX->GetVariableByName("gWorld")->AsMatrix();
 	mfxEyePosVar     = mFX->GetVariableByName("gEyePosW");
 	mfxLightVar      = mFX->GetVariableByName("gLight");
+	mfxAlpha		 = mFX->GetVariableByName("alphaValue")->AsScalar();
 	mfxDiffuseMapVar = mFX->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	mfxSpecMapVar    = mFX->GetVariableByName("gSpecMap")->AsShaderResource();
 	mfxTexMtxVar     = mFX->GetVariableByName("gTexMtx")->AsMatrix();
+	mfxProjMatrix    = mFX->GetVariableByName("gViewProj")->AsMatrix();
 	mfxNumLights	 = mFX->GetVariableByName("gNumLights")->AsScalar();
 }
 
@@ -1237,13 +1294,14 @@ void ColoredCubeApp::buildVertexLayouts()
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D10_INPUT_PER_VERTEX_DATA, 0},
 		{"DIFFUSE",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D10_INPUT_PER_VERTEX_DATA, 0},
 		{"SPECULAR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D10_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D10_INPUT_PER_VERTEX_DATA, 0}
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D10_INPUT_PER_VERTEX_DATA, 0},
+		{"SIZE", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 80, D3D10_INPUT_PER_VERTEX_DATA, 0}
 	};
 
 	// Create the input layout
     D3D10_PASS_DESC PassDesc;
     mTech->GetPassByIndex(0)->GetDesc(&PassDesc);
-    HR(md3dDevice->CreateInputLayout(vertexDesc, 6, PassDesc.pIAInputSignature,
+    HR(md3dDevice->CreateInputLayout(vertexDesc, 7, PassDesc.pIAInputSignature,
 		PassDesc.IAInputSignatureSize, &mVertexLayout));
 }
 
@@ -1274,6 +1332,7 @@ void ColoredCubeApp::updateGameState()
        }
        if(gamestate == level2 && goal ||(GetAsyncKeyState('Q') & 0x8000))
        {
+		    goal = false;
             nextState = level3;
 			gamestate = splash;
 			reloadLevel(10,10);
@@ -1281,6 +1340,7 @@ void ColoredCubeApp::updateGameState()
        }
 	   if(gamestate == level3 && goal)
 	   {
+		   goal = false;
 			gamestate = win;
 	   }
 	   if(gamestate == level4 && goal)

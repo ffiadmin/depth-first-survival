@@ -18,7 +18,8 @@ public:
 	//sets the pointer to the location of the texture variables in the shader
 	void setTexLocVariable(ID3D10EffectShaderResourceVariable* diffuseLoc, ID3D10EffectShaderResourceVariable* specLoc);
 	void setTex(ID3D10ShaderResourceView* diffuseTexture, ID3D10ShaderResourceView* specTexture);
-	void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
+	void setProjection(ID3D10EffectMatrixVariable* p) {mfxViewProjVar = p;}
+	virtual void draw(D3DXMATRIX model, D3DXMATRIX projection, ID3D10EffectTechnique* technique);
 	void update(float dt);
 
 	virtual void setPosition (Vector3 pos) {position = pos;}
@@ -38,6 +39,8 @@ public:
 	bool getActiveState() {return active;}
 	void setMTech(ID3D10EffectTechnique* m){ mTech = m;}
 	bool collided(GameObject *gameObject);
+
+	Geometry* getGeo() {return geo;}
 
 	void setRotation(Vector3 r) {rotation = r;}
 	Vector3 getRotation() {return rotation;}
@@ -69,6 +72,9 @@ private:
 	ID3D10EffectShaderResourceVariable* mfxSpecMapVar;
 	ID3D10ShaderResourceView* mDiffuseMapRV;
 	ID3D10ShaderResourceView* mSpecMapRV;
+
+	//variable for projection matrix if it is to be treated like a billboard
+	ID3D10EffectMatrixVariable* mfxViewProjVar;
 };
 
 
