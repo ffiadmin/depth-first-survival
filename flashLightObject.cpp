@@ -47,12 +47,12 @@ bool FlashLightObject::hitTarget(GameObject* g)
 
 void FlashLightObject::update(float dt)
 {
-	if(!debounce && GetAsyncKeyState('O') & 0x8000)
+	if(!debounce && GetAsyncKeyState('F') & 0x8000)
 	{
 		on = !on;
 		debounce = true;
 	}
-	if(!(GetAsyncKeyState('O') & 0x8000))
+	if(!(GetAsyncKeyState('F') & 0x8000))
 	{
 		debounce = false;
 	}

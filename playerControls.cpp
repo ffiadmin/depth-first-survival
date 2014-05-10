@@ -25,6 +25,11 @@ void playerControls::movePlayer(GameObject &player, float playerSpeed, Vector3 d
 	player.setVelocity(playerSpeed * movementFP(dir,perspective));
 }
 
+void playerControls::moveObject(GameObject &player, float playerSpeed, Vector3 dir, bool perspective)
+{
+	player.setVelocity(playerSpeed * dir);
+}
+
 Vector3 playerControls::movementFP(Vector3 dir, bool perspective)
 {
 	Vector3 direction = Vector3(0,0,0);

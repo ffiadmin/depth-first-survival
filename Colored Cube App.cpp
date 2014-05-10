@@ -605,10 +605,8 @@ void ColoredCubeApp::updateScene(float dt)
 				}
 			}
 		}
-		
 		//projectile[i].update(dt);
 	}
-
 	switch(gamestate)
 	{
 	case title:
@@ -1409,7 +1407,6 @@ void ColoredCubeApp::updateGameState()
 		 return;
 	 projectile[projectileNum].setPosition(pos);
 	 projectile[projectileNum].setActive();
-	 //breadCrumbs[breadNumber].setVelocity(camera.movementFP(camera.getTarget(),perspective));
 	 camera.moveObject(projectile[projectileNum],20.0f, camera.getTarget(),perspective);
 	 projectileNum++;
  }
