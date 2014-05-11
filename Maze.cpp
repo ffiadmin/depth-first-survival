@@ -501,12 +501,23 @@ bool Maze::collided(Location px) {
 	return false;
 }
 
-void Maze::draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX) {
+void Maze::draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX,ID3D10EffectTechnique *ceilTech) {
 	D3DXMATRIX worldViewProj;
 	D3DXMatrixIdentity(&worldViewProj);
 
-	for(int i = 0; i < wallsConstructed; ++i) {
-		walls[i].draw(viewMTX, projMTX, technique);
+	if(!ceilTech)
+	{
+		for(int i = 0; i < wallsConstructed; ++i) {
+			walls[i].draw(viewMTX, projMTX, technique);
+		}
+	}
+	else
+	{
+		for(int i = 0; i < wallsConstructed-2; ++i) {
+			walls[i].draw(viewMTX, projMTX, technique);
+		}
+		walls[wallsConstructed-1].draw(viewMTX,projMTX,ceilTech);
+		walls[wallsConstructed-2].draw(viewMTX,projMTX,ceilTech);
 	}
 }
 

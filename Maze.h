@@ -75,7 +75,7 @@ public :
 public : 
 	void build();
 	bool collided(Location px);
-	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX);
+	void draw(ID3D10EffectTechnique *technique, D3DXMATRIX viewMTX, D3DXMATRIX projMTX, ID3D10EffectTechnique *ceilTech = 0);
 	void init(Dimension dim, ID3D10EffectMatrixVariable *mfxWVPVar, ID3D10EffectMatrixVariable* fx2,ID3D10Device *md3dDevice);
 	void update(float dt);
 	

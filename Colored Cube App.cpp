@@ -152,6 +152,9 @@ private:
 	ID3D10EffectTechnique* mTech;
 	ID3D10EffectTechnique* mTechColor2;
 	ID3D10EffectTechnique* mTechBillboard;
+	ID3D10EffectTechnique* mTechFogColor;
+	ID3D10EffectTechnique* mTechFogCeil;
+	ID3D10EffectTechnique* mTechFog;
 	ID3D10InputLayout* mVertexLayout;
 	ID3D10EffectMatrixVariable* mfxWVPVar;
 	//my addition
@@ -198,6 +201,8 @@ private:
 	float mRadius;
 	float mTheta;
 	float mPhi;
+
+	bool fog;
 
     float timer;
     std::wstring mTimer;
@@ -271,6 +276,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	oldBLevel = 0;
 	gamestate = title;
 	sceneAlpha = 1.0f;
+	fog = false;
 }
 
 ColoredCubeApp::~ColoredCubeApp()
@@ -496,7 +502,7 @@ void ColoredCubeApp::initApp()
 		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
-	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(0.75,0.75,0.75));
+	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,4*sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(1,1,1));
 	ghosts.setBlend(mTransparentBS);
 	ghosts.setTex(brickTexture,iceSpecMap);
 	ghosts.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
@@ -742,20 +748,20 @@ void ColoredCubeApp::updateScene(float dt)
 		lights[0] = ambientLighting;
 		break;
 	case level1:
-		updateL1(dt);
 		updateLights();
+		updateL1(dt);
 		break;
 	case level2:
-		updateL2(dt);
 		updateLights();
+		updateL2(dt);
 		break;
 	case level3:
-		updateL3(dt);
 		updateLights();
+		updateL3(dt);
 		break;
 	case level4:
-		updateL3(dt);
 		updateLights();
+		updateL3(dt);
 		break;
 	case gameover:
 		updateSplashScreen(dt,loseScreenTexture);
@@ -841,6 +847,19 @@ void ColoredCubeApp::drawScene()
 {
 	D3DApp::drawScene();
 
+	ID3D10EffectTechnique* colorTech;
+	ID3D10EffectTechnique* texTech;
+	if(fog)
+	{
+		colorTech = mTechFogColor;
+		texTech = mTechFog;
+	}
+	else
+	{
+		colorTech = mTechColor2;
+		texTech = mTech;
+	}
+
 	// Restore default states, input layout and primitive topology 
 	// because mFont->DrawText changes them.  Note that we can 
 	// restore the default states by passing null.
@@ -879,20 +898,23 @@ void ColoredCubeApp::drawScene()
 	mTech->GetDesc(&techDesc);
 
 	//draw the maze
-	maze.draw(mTech,mView,mProj);
+	if(fog)
+		maze.draw(texTech,mView,mProj,mTechFogCeil);
+	else
+		maze.draw(texTech,mView,mProj);
 
 	//draw the keys
 	if(gamestate == level1)
 	{
 		for(int i = 0; i < totalKeys; i++)
 		{
-			keyObject[i].draw(mView,mProj,mTech);
+			keyObject[i].draw(mView,mProj,texTech);
 		}
 	}
 
 	//draw the end cube
 	if(gamestate == level3)
-		endCube.draw(mView,mProj,mTech);
+		endCube.draw(mView,mProj,texTech);
 
 	//draw the origin
 	//origin.draw(mView, mProj, mTech);
@@ -902,7 +924,7 @@ void ColoredCubeApp::drawScene()
 	{
 		if(breadCrumbs[i].getActiveState())
 		{
-			breadCrumbs[i].draw(mView,mProj,mTech);
+			breadCrumbs[i].draw(mView,mProj,texTech);
 		}
 	}
 
@@ -910,30 +932,30 @@ void ColoredCubeApp::drawScene()
 	{
 		if(projectile[i].getActiveState())
 		{
-			projectile[i].draw(mView,mProj,mTech);
+			projectile[i].draw(mView,mProj,texTech);
 		}
 	}
 
 	for(int i = 0; i < numLightObjects; i++)
 	{
-		lamps[i].draw(mView,mProj,mTech);
+		lamps[i].draw(mView,mProj,texTech);
 	}
 
 	for(int i = 0; i < numBatteries; i++)
 	{
-		batteries[i].draw(mView,mProj,mTechColor2);
+		batteries[i].draw(mView,mProj,colorTech);
 	}
 
 	//flashLightObject.draw(mView,mProj,mTechColor2);
 	//flashLightObject.hitBox.draw(mView,mProj,mTechColor2);
 	
-	player.draw(mView,mProj,mTech);
+	player.draw(mView,mProj,texTech);
 
 	billboard.draw(mView,mProj,mTechBillboard);
 
 	if(gamestate == level2 || gamestate == level3)
 	{
-		ghosts.draw(mView,mProj,mTech);
+		ghosts.draw(mView,mProj,texTech);
 	}
 
 	// We specify DT_NOCLIP, so we do not care about width/height of the rect.
@@ -1146,6 +1168,9 @@ void ColoredCubeApp::buildFX()
 	mTech = mFX->GetTechniqueByName("TexTech");
 	mTechColor2 = mFX->GetTechniqueByName("ColorTech");
 	mTechBillboard = mFX->GetTechniqueByName("BillboardTech");
+	mTechFog = mFX->GetTechniqueByName("fogTech");
+	mTechFogColor = mFX->GetTechniqueByName("fogColorTech");
+	mTechFogCeil = mFX->GetTechniqueByName("ceilingFogTech");
 	//mTechStatic = mFX->GetTechniqueByName("StaticTech");
 
 	mfxWVPVar        = mFX->GetVariableByName("gWVP")->AsMatrix();
@@ -1207,6 +1232,7 @@ void ColoredCubeApp::updateGameState()
             nextState = level2;
 			splashScreen = l2Splash;
 			sceneAlpha = 1.0f;
+			fog = true;
        }
        if(gamestate == level2 && goal ||(GetAsyncKeyState('Q') & 0x8000))
        {
@@ -1217,6 +1243,7 @@ void ColoredCubeApp::updateGameState()
 			transitionState = splash;
 			splashScreen = l3Splash;
 			sceneAlpha = 1.0f;
+			fog = false;
        }
 	   if(gamestate == level3 && goal)
 	   {
@@ -1225,6 +1252,7 @@ void ColoredCubeApp::updateGameState()
 		   lights[1] = ambientLighting;
 			transitionState = win;
 			sceneAlpha = 1.0f;
+			fog = false;
 	   }
 	   if(gamestate == level4 && goal)
 	   {
@@ -1250,7 +1278,7 @@ void ColoredCubeApp::updateGameState()
        }
 }
 
- void ColoredCubeApp::reloadLevel(int x, int z)
+void ColoredCubeApp::reloadLevel(int x, int z)
 {
 	//reset breadcrumbs
 	breadNumber = 0;
@@ -1334,7 +1362,7 @@ void ColoredCubeApp::updateGameState()
 	}
 }
 
- void ColoredCubeApp::dropBread(Vector3 pos)
+void ColoredCubeApp::dropBread(Vector3 pos)
  {
 	 if(breadNumber>=maxBread)
 		 return;
@@ -1345,7 +1373,7 @@ void ColoredCubeApp::updateGameState()
 	 breadNumber++;
  }
 
-  void ColoredCubeApp::shootProjectile(Vector3 pos)
+void ColoredCubeApp::shootProjectile(Vector3 pos)
  {
 	 if(projectileNum>=maxProjectile)
 		 return;
