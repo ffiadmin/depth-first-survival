@@ -309,6 +309,37 @@ float4 PSColor(VS_OUT pIn) : SV_Target
     return float4(litColor, alphaValue);
 }
 
+float4 PSEmmisive(VS_OUT pIn) : SV_Target
+{
+	// Interpolating normal can make it not be of unit length so normalize it.
+    pIn.normalW = normalize(pIn.normalW);
+   
+   
+    SurfaceInfo v = {pIn.posW, pIn.normalW, pIn.diffuse/10, pIn.spec/10};
+    
+    float3 litColor = float3(0,0,0);
+	
+	for(uint i = 0; i < gNumLights; i++)
+	{
+		if(gLight[i].lightType.x == 0)
+		{
+			litColor += ParallelLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType.x == 1)
+		{
+			litColor += PointLight(v, gLight[i], gEyePosW);
+		}
+		else if(gLight[i].lightType.x == 2)
+		{
+			litColor += Spotlight(v, gLight[i], gEyePosW);
+		}
+	}
+
+	litColor += float3(0.05,0.05,0);
+
+    return float4(litColor, alphaValue);
+}
+
 float4 PSFogColor(VS_OUT pIn) : SV_Target
 {
 	// Interpolating normal can make it not be of unit length so normalize it.
@@ -406,6 +437,7 @@ technique10 fogColorTech
 	}
 }
 
+//special equations meant to make the floor and ceiling of the maze look decent in the fog based level
 technique10 ceilingFogTech
 {
 	pass P3
@@ -413,5 +445,15 @@ technique10 ceilingFogTech
 		SetVertexShader( CompileShader(   vs_4_0, VSFogCeil() ) );
         SetGeometryShader( NULL );
         SetPixelShader( CompileShader(    ps_4_0, PSFog() ) );		
+	}
+}
+
+technique10 emmisiveTech
+{
+	pass P4
+	{
+		SetVertexShader( CompileShader(   vs_4_0, VS() ) );
+        SetGeometryShader( NULL );
+        SetPixelShader( CompileShader(    ps_4_0, PSEmmisive() ) );		
 	}
 }
