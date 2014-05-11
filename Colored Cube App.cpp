@@ -48,7 +48,7 @@ public:
 	void updateScene(float dt);
 	void drawScene(); 
 	void updateGameState();
-	void reloadLevel(int x, int z);
+	void reloadLevel(int x, int z, bool keys = false);
 
 private:
 	void buildFX();
@@ -84,6 +84,7 @@ private:
 	Audio* audio;
 	playerControls camera;
 	Light lights[10];
+	Light* keyLights[10];
 	int lightsGoingInShader;
 	float topDownTime;
 	float maxTopDownTime;
@@ -308,6 +309,7 @@ ColoredCubeApp::~ColoredCubeApp()
 	brickSpecMap->Release();
 	iceSpecMap->Release();
 
+
 	ReleaseCOM(mFX);
 	ReleaseCOM(mVertexLayout);
 	ReleaseCOM(mTransparentBS);
@@ -398,7 +400,6 @@ void ColoredCubeApp::initApp()
 	ambientLighting.dir = D3DXVECTOR3(0, -1, 0);	
 	ambientLighting.lightType.x = 0;
 
-
 	buildFX();
 	buildVertexLayouts();
 
@@ -474,7 +475,22 @@ void ColoredCubeApp::initApp()
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
 		auto spot = maze.cellToPx(l);
+
 		keyObject[i].setPosition(Vector3(spot.x,-1,spot.z));
+		keyLights[i] = new Light();
+		keyLights[i]->ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+		keyLights[i]->diffuse  = D3DXCOLOR(0.2f, 0.1f, 0.5f, 1.0f);
+		keyLights[i]->specular = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+		keyLights[i]->att.x    = 1.0f;
+		keyLights[i]->att.y    = 0.0f;
+		keyLights[i]->att.z    = 0.0f;
+		keyLights[i]->spotPow  = 10;
+		keyLights[i]->range    = 100;
+		keyLights[i]->pos = D3DXVECTOR3(spot.x,5,spot.z);
+		keyLights[i]->dir = D3DXVECTOR3(0, -1, 0);	
+		keyLights[i]->lightType.x = 2;
+		totalLights[lightsAdded] = keyLights[i];
+		lightsAdded++;
 	}
 
 	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
@@ -498,6 +514,7 @@ void ColoredCubeApp::initApp()
 	endLight.lightType.x = 2;
 
 	totalLights[lightsAdded] = &endLight;
+	lightsAdded++;
 
 	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	for(int i = 0; i < numBatteries; i++)
@@ -1018,6 +1035,7 @@ void ColoredCubeApp::updateL1(float dt)
 		{
 			currentKeys++;
 			keyObject[i].setInActive();
+			keyLights[i]->pos = Vector3(100,100,100);
 			audio->playCue(ITEM);
 		}
 	}
@@ -1315,13 +1333,13 @@ void ColoredCubeApp::updateGameState()
        if((gamestate == gameover ||gamestate==win) && (GetAsyncKeyState('P') & 0x8000))
        {
               gamestate = title;
-			  reloadLevel(10,10);
+			  reloadLevel(10,10,true);
 			  player.setHealth(10);
 			  goal = false;
        }
 }
 
-void ColoredCubeApp::reloadLevel(int x, int z)
+void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 {
 	//reset breadcrumbs
 	breadNumber = 0;
@@ -1385,14 +1403,18 @@ void ColoredCubeApp::reloadLevel(int x, int z)
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 	}
-	for(int i = 0; i < totalKeys; i++)
+	if(keys)
 	{
-		Location l;
-		l.x = rand()%mazeX;
-		l.z = rand()%mazeZ;
-		auto spot = maze.cellToPx(l);
-		keyObject[i].setPosition(Vector3(spot.x,-1,spot.z));
-		keyObject[i].setActive();
+		for(int i = 0; i < totalKeys; i++)
+		{
+			Location l;
+			l.x = rand()%mazeX;
+			l.z = rand()%mazeZ;
+			auto spot = maze.cellToPx(l);
+			keyObject[i].setPosition(Vector3(spot.x,-1,spot.z));
+			keyLights[i]->pos = Vector3(spot.x,5,spot.z);
+			keyObject[i].setActive();
+		}
 	}
 	for(int i = 0; i < numBatteries; i++)
 	{
