@@ -46,5 +46,8 @@ void EnemyObject::update(float dt, GameObject* player, Vector3 playerDir, bool t
 	}
 	GameObject::update(dt);
 	if(getHealth()<=0)
+	{
+		ghostLight.pos = Vector3(100,100,100);
 		setInActive();
+	}
 }

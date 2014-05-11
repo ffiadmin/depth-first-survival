@@ -85,6 +85,8 @@ private:
 	playerControls camera;
 	Light lights[10];
 	int lightsGoingInShader;
+	float topDownTime;
+	float maxTopDownTime;
 	Light* totalLights[100];
 	//LightObject lightObject1;
 	//Input* input;
@@ -143,6 +145,8 @@ private:
 	int mazeX;
 	int mazeZ;
 
+	float timeBetweenTopDown;
+
 	bool perspectiveDebounced;
 	bool breadDebounced;
 	bool projectileDebounced;
@@ -154,6 +158,7 @@ private:
 	ID3D10EffectTechnique* mTechBillboard;
 	ID3D10EffectTechnique* mTechFogColor;
 	ID3D10EffectTechnique* mTechFogCeil;
+	ID3D10EffectTechnique* mTechEmmisive;
 	ID3D10EffectTechnique* mTechFog;
 	ID3D10InputLayout* mVertexLayout;
 	ID3D10EffectMatrixVariable* mfxWVPVar;
@@ -252,6 +257,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	{
 		totalLights[i] = 0;
 	}
+	maxTopDownTime = 10;
+	topDownTime = 0;
 	breadDebounced = false;
 	projectileDebounced = false;
 	perspectiveDebounced = false;
@@ -265,7 +272,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	lightsGoingInShader = 10;
 	prevLightType = 0;
 	score = 0;
-	timer = 30;
+	timer = 0;
 	lightsAdded = 0;
 	l3Ghosts = 10;
 	ghostsKilled = 0;
@@ -276,6 +283,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	oldBLevel = 0;
 	gamestate = title;
 	sceneAlpha = 1.0f;
+	timeBetweenTopDown = 20;
 	fog = false;
 }
 
@@ -583,6 +591,17 @@ void ColoredCubeApp::updateScene(float dt)
 		audio->playCue(BATTERY_DIE);
 	}
 
+	if(!perspective && topDownTime != maxTopDownTime)
+	{
+		timer+=dt;
+	}
+
+	if(timer>=timeBetweenTopDown)
+	{
+		timer = 0;
+		topDownTime = maxTopDownTime;
+	}
+
 	oldBLevel = flashLightObject.getPowerLevel();
 	auto oldP = player.getPosition();
 	//timer -= dt;
@@ -679,7 +698,7 @@ void ColoredCubeApp::updateScene(float dt)
 		projectileDebounced = false;
 	}
 
-	if(!perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
+	if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
 	{
 		perspective = !perspective;
 		perspectiveDebounced = true;
@@ -689,6 +708,16 @@ void ColoredCubeApp::updateScene(float dt)
 	{
 		perspectiveDebounced = false;
 		//ambientLighting.ambient = ambientLight;
+	}
+
+	if(perspective)
+	{
+		topDownTime -= dt;
+	}
+
+	if(topDownTime <= 0)
+	{
+		perspective = false;
 	}
 
 	for(int i = 0; i < numLightObjects; i++)
@@ -943,7 +972,7 @@ void ColoredCubeApp::drawScene()
 
 	for(int i = 0; i < numBatteries; i++)
 	{
-		batteries[i].draw(mView,mProj,colorTech);
+		batteries[i].draw(mView,mProj,mTechEmmisive);
 	}
 
 	//flashLightObject.draw(mView,mProj,mTechColor2);
@@ -976,6 +1005,10 @@ void ColoredCubeApp::updateL1(float dt)
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
 	outs << "\nKeys Remaining: " << (totalKeys-currentKeys);
+	if(topDownTime == maxTopDownTime)
+		outs << "\nTop Down Available";
+	if(perspective)
+		outs << "\nTop Down Remaining: " << topDownTime;
 	mTimer = outs.str();
 
 	for(int i = 0; i < totalKeys; i++)
@@ -993,8 +1026,6 @@ void ColoredCubeApp::updateL1(float dt)
 void ColoredCubeApp::updateL3(float dt)
 {
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
-
-	timer -= dt;
 	std::wostringstream outs; 
 	
 	outs.precision(2);
@@ -1002,6 +1033,11 @@ void ColoredCubeApp::updateL3(float dt)
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	if(topDownTime == maxTopDownTime)
+		outs << "\nTop Down Available";
+	if(perspective)
+		outs << "\nTop Down Remaining: " << topDownTime;
+	mTimer = outs.str();
 	mTimer = outs.str();
 
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
@@ -1052,6 +1088,11 @@ void ColoredCubeApp::updateL2(float dt)
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
 	outs << "\nGhosts remaining: " << l3Ghosts - ghostsKilled;
+	if(topDownTime == maxTopDownTime)
+		outs << "\nTop Down Available";
+	if(perspective)
+		outs << "\nTop Down Remaining: " << topDownTime;
+	mTimer = outs.str();
 	mTimer = outs.str();
 
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
@@ -1066,6 +1107,7 @@ void ColoredCubeApp::updateL2(float dt)
 			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
+			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
 			audio->playCue(P_HIT);
 		}
 	}
@@ -1171,6 +1213,7 @@ void ColoredCubeApp::buildFX()
 	mTechFog = mFX->GetTechniqueByName("fogTech");
 	mTechFogColor = mFX->GetTechniqueByName("fogColorTech");
 	mTechFogCeil = mFX->GetTechniqueByName("ceilingFogTech");
+	mTechEmmisive = mFX->GetTechniqueByName("emmisiveTech");
 	//mTechStatic = mFX->GetTechniqueByName("StaticTech");
 
 	mfxWVPVar        = mFX->GetVariableByName("gWVP")->AsMatrix();
