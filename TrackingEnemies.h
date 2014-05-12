@@ -13,9 +13,14 @@ public:
 	Solution* getEnd(Solution* path);
 private:
 	Solution path;
+	Solution path2;
 	bool reverse;
 	Solution* current;
+	Solution* forward;
+	Solution* backward;
 	Solution* end;
 	int moves;
+	Location s;
+	Location e;
 	Location playerCell;
 };
