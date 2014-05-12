@@ -409,6 +409,7 @@ void ColoredCubeApp::initApp()
 	mazeZ = d.z;
 	maze.init(d,mfxWVPVar,mfxWorldVar,md3dDevice);
 	maze.build();
+	Solution sol = maze.solve();
 	maze.setTex(brickTexture,brickSpecMap);	
 	maze.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
@@ -442,9 +443,9 @@ void ColoredCubeApp::initApp()
 	player.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	Location start = maze.getStartPosition();
 	start = maze.cellToPx(start);
-	player.setPosition(Vector3(start.x+10,0,start.z+10));
+	player.setPosition(Vector3(start.x,0,start.z));
 
-	billboard.setPosition(Vector3(start.x+10,0,start.z+10));
+	billboard.setPosition(Vector3(start.x,0,start.z));
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
@@ -1350,7 +1351,7 @@ void ColoredCubeApp::reloadLevel(int x, int z)
 	//put the player in the right spot
 	Location start = maze.getStartPosition();
 	start = maze.cellToPx(start);
-	player.setPosition(Vector3(start.x+10,0,start.z+10));
+	player.setPosition(Vector3(start.x,0,start.z));
 
 	//put the goal box in the correct location
 	Location end = maze.getEndPosition();
