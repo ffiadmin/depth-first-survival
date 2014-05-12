@@ -3,6 +3,7 @@
 TrackingEnemies::TrackingEnemies()
 {
 	reverse = false;
+	moves = 10;
 }
 
 void TrackingEnemies::setPath(Maze* maze, Location startCell, Location endCell)
@@ -46,7 +47,16 @@ void TrackingEnemies::update(float dt, GameObject* player, bool track, Maze* maz
 			end = end->next;
 			end->end = true;
 			end->location = playerCell;
-
+			moves++;
+			if(moves>=20)
+			{
+				moves = 0;
+				Location enemy;
+				enemy.x = getPosition().x;
+				enemy.z = getPosition().z;
+				enemy = maze->pxToCell(enemy);
+				setPath(maze,enemy,playerCell);
+			}
 		}
 	}
 

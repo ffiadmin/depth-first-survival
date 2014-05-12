@@ -16,5 +16,6 @@ private:
 	bool reverse;
 	Solution* current;
 	Solution* end;
+	int moves;
 	Location playerCell;
 };

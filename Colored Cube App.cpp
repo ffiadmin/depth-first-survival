@@ -80,6 +80,7 @@ private:
 	playerControls camera;
 	Light lights[10];
 	Light* keyLights[10];
+	Mesh pokey;
 	int lightsGoingInShader;
 	float topDownTime;
 	float maxTopDownTime;
@@ -101,7 +102,7 @@ private:
 	bool goal;
 	int currentKeys, totalKeys;
 
-	D3DXCOLOR ambientLight,hurtLight;
+	D3DXCOLOR ambientLight;
 
 	Mesh key;
 	GameObject keyObject[10];
@@ -246,8 +247,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
-	numLightObjects = 10;
-	numBatteries = 20;
+	numLightObjects = 7;
+	numBatteries = 10;
 	player.setHealth(10);
 	lightsGoingInShader = 10;
 	prevLightType = 0;
@@ -367,8 +368,6 @@ void ColoredCubeApp::initApp()
 	//1: Point
 	//2: Spot
 
-	hurtLight = D3DXCOLOR(1,0,0,1);
-
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
 	ambientLighting.ambient = ambientLight;
@@ -385,6 +384,8 @@ void ColoredCubeApp::initApp()
 
 	buildFX();
 	buildVertexLayouts();
+
+	pokey.init(md3dDevice,1,"pokey.txt");
 
 	//Build Maze
 	Dimension d;
@@ -434,7 +435,7 @@ void ColoredCubeApp::initApp()
 	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 	testTracker2.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 
-	dungeonMaster.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
+	dungeonMaster.init(&pokey,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
 
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
@@ -1156,7 +1157,6 @@ void ColoredCubeApp::updateL3(float dt)
 		if(player.collided(&ghosts.getEnemies()[i]))
 		{
 			player.setHealth(player.getHealth()-1);
-			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
 			audio->playCue(P_HIT);
@@ -1211,7 +1211,6 @@ void ColoredCubeApp::updateL2(float dt)
 		if(player.collided(&ghosts.getEnemies()[i]))
 		{
 			player.setHealth(player.getHealth()-1);
-			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
 			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
@@ -1260,6 +1259,21 @@ void ColoredCubeApp::updateL4(float dt)
 
 	dungeonMaster.update(dt,&player,true,&maze);
 
+	if(dungeonMaster.collided(&player))
+	{
+		player.setHealth(player.getHealth()-2);
+		Location playerStart = maze.getStartPosition();
+		playerStart = maze.cellToPx(playerStart);
+		player.setPosition(Vector3(playerStart.x,0,playerStart.z));
+		Location masterStart;
+		masterStart.x = rand()%5;
+		masterStart.z = rand()%5;
+		Location temp = maze.cellToPx(masterStart);
+		dungeonMaster.setPosition(Vector3(temp.x,0,temp.z));
+		dungeonMaster.setPath(&maze,maze.pxToCell(masterStart),maze.getStartPosition());
+		audio->playCue(WILHELM);
+	}
+
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
 	//ghost collision detection
 	
@@ -1269,13 +1283,18 @@ void ColoredCubeApp::updateL4(float dt)
 		if(player.collided(&ghosts.getEnemies()[i]))
 		{
 			player.setHealth(player.getHealth()-1);
-			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
 			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
 			audio->playCue(P_HIT);
 		}
 	}
+
+	if(endCube.collided(&player))
+	{
+		goal = true;
+	}
+
 	//flashlight ghost attack
 	if(flashLightObject.getOn())
 	{
