@@ -23,6 +23,7 @@ Solution* TrackingEnemies::getEnd(Solution* path)
 	}
 	else
 	{
+		path->next->end = true;
 		return getEnd(path->next);
 	}
 }
@@ -62,21 +63,34 @@ void TrackingEnemies::update(float dt, GameObject* player, bool track, Maze* maz
 
 	if((getPosition().x <= next.x+2 && getPosition().x >= next.x-2) && (getPosition().z <= next.z+2 && getPosition().z >= next.z-2))
 	{
-		if(!track && ((!reverse && (current->end||current->next->location.x==-1||current->next->location.z==-1||current->next->location.x==-1||current->next->location.z==-1||current->end)) || (reverse && (current->start))))
+		/*if(!track && ((!reverse && (current->end||current->next->location.x==-1||current->next->location.z==-1||current->next->location.x==-1||current->next->location.z==-1||current->end)) || (reverse && (current->start))))
 		{
 			reverse = !reverse;
-		}
+		}*/
 		if(!reverse)
 		{
-			if(current->next)
+			if(!current->end && current->next->location.x !=-1 && current->next->location.z!=-1 && current->location.x!=-1 && current->location.z!=-1)
+			{
 				current = current->next;
-			next = maze->cellToPx(current->location);
+				next = maze->cellToPx(current->location);
+			}
+			else
+			{
+				reverse = !reverse;
+			}
 		}
 		else
 		{
-			if(current->previous)
+			if(!current->start && current->previous->location.x!=-1 && current->previous->location.z!=-1 && current->location.x!=-1 && current->location.z!=-1)
+			{
 				current = current->previous;
-			next = maze->cellToPx(current->location);
+				next = maze->cellToPx(current->location);
+			}
+			else
+			{
+				reverse = !reverse;
+			}
+			
 		}
 	}
 

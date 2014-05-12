@@ -621,7 +621,7 @@ void ColoredCubeApp::updateScene(float dt)
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
 	//Player collision detection
-	if(player.getPosition()!=oldP)
+	/*if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
 		{
@@ -629,7 +629,7 @@ void ColoredCubeApp::updateScene(float dt)
 			player.setVelocity(Vector3(0,0,0));
 			player.update(dt);
 		}
-	}
+	}*/
 	flashLightObject.update(dt);
 	
 	maze.update(dt);
@@ -756,7 +756,7 @@ void ColoredCubeApp::updateScene(float dt)
 
 	if(topDownTime <= 0)
 	{
-		perspective = false;
+		;//perspective = false;
 	}
 
 	//Update Lamp Lights
@@ -1193,11 +1193,6 @@ void ColoredCubeApp::updateL3(float dt)
 			}
 		}
 	}
-	//win scenario
-	if(player.collided(&endCube))
-	{
-		goal = true;
-	}
 }
 
 void ColoredCubeApp::updateL2(float dt)
@@ -1566,6 +1561,10 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		temp.z = rand()%9;
 		dungeonMaster.setPath(&maze,temp,maze.getStartPosition());
 		dungeonMaster.setPosition(Vector3(maze.cellToPx(temp).x,0,maze.cellToPx(temp).z));
+	}
+	else
+	{
+		endLight.pos = Vector3(0,1000,0);
 	}
 
 	if(gamestate == level3)
