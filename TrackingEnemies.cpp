@@ -1,0 +1,92 @@
+#include "TrackingEnemies.h"
+
+TrackingEnemies::TrackingEnemies()
+{
+	reverse = false;
+}
+
+void TrackingEnemies::setPath(Maze* maze, Location startCell, Location endCell)
+{
+	path = maze->solve(startCell,endCell);
+	current = &path;
+	playerCell = maze->pxToCell(endCell);
+	end = getEnd(current);
+	int stuff = 0;
+}
+
+Solution* TrackingEnemies::getEnd(Solution* path)
+{
+	if(path->next->location.x==-1 || path->next->location.z==-1)
+	{
+		return path;
+	}
+	else
+	{
+		return getEnd(path->next);
+	}
+}
+
+void TrackingEnemies::update(float dt, GameObject* player, bool track, Maze* maze)
+{
+	Location next = maze->cellToPx(current->location);
+
+	//constantly add the players location to your destination
+	if(track)
+	{
+		Location pL;
+		pL.x = player->getPosition().x;
+		pL.z = player->getPosition().z;
+		Location playerLoc = maze->pxToCell(pL);
+		if(playerLoc.x != playerCell.x || playerLoc.z != playerCell.z)
+		{
+			playerCell = playerLoc;
+			end->end = false;
+			end->next = new Solution();
+			end->next->previous = end;
+			end = end->next;
+			end->end = true;
+			end->location = playerCell;
+
+		}
+	}
+
+	if((getPosition().x <= next.x+2 && getPosition().x >= next.x-2) && (getPosition().z <= next.z+2 && getPosition().z >= next.z-2))
+	{
+		if((!reverse && current->next->end) || (reverse && current->start))
+		{
+			reverse = !reverse;
+		}
+		if(!reverse)
+		{
+			current = current->next;
+			Location next = maze->cellToPx(current->location);
+		}
+		else
+		{
+			current = current->previous;
+			Location next = maze->cellToPx(current->location);
+		}
+	}
+
+	Vector3 playerDiff = player->getPosition() - getPosition();
+	double distance = sqrtf(abs(Dot(&playerDiff,&playerDiff)));
+	Vector3 diff = Vector3(next.x,0,next.z)-getPosition();
+	
+	Vector3 direction;
+	Location p;
+	p.x = getPosition().x;
+	p.z = getPosition().z;
+
+	if(distance>=20 || maze->collided(p))
+	{
+		direction = diff;
+	}
+	else
+	{
+		direction = playerDiff;
+	}
+	
+	Normalize(&direction,&direction);
+	setVelocity(direction *getSpeed());
+	GameObject::update(dt);
+}

@@ -34,6 +34,7 @@
 #include "EnemyHoard.h"
 #include "LightObject.h"
 #include "Maze.h"
+#include "TrackingEnemies.h"
 
 class ColoredCubeApp : public D3DApp
 {
@@ -61,6 +62,7 @@ private:
 	void updateL4(float dt);
 	void updateSplashScreen(float dt,ID3D10ShaderResourceView* screen);
 	void updateTransition(float dt);
+	void updatePerspectiveSwitch(float dt);
 	void updateLights();
 	void drawTitle();
 	void drawControls();
@@ -118,6 +120,9 @@ private:
 	GameObject endCube;
 	Light endLight;
 	Light ambientLighting;
+
+	TrackingEnemies testTracker;
+
 	//GameObject floor,wall1,wall2,wall3,wall4;
 	//EnemyObject enemy;
 	EnemyHoard ghosts;
@@ -448,6 +453,8 @@ void ColoredCubeApp::initApp()
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
 
+	testTracker.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
@@ -743,6 +750,8 @@ void ColoredCubeApp::updateScene(float dt)
 	{
 		perspective = !perspective;
 		perspectiveDebounced = true;
+		nextState = gamestate;
+		gamestate = viewSwitch;
 		//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
 	}
 	if(!(GetAsyncKeyState('R') & 0x8000))
@@ -848,6 +857,10 @@ void ColoredCubeApp::updateScene(float dt)
 		lights[0] = ambientLighting;
 	case transition:
 		updateTransition(dt);
+		lights[1] = ambientLighting;
+		break;
+	case viewSwitch:
+		updatePerspectiveSwitch(dt);
 		lights[1] = ambientLighting;
 		break;
 	}
@@ -991,6 +1004,8 @@ void ColoredCubeApp::drawScene()
 	//draw the origin
 	//origin.draw(mView, mProj, mTech);
 	
+	testTracker.draw(mView,mProj,mTechColor2);
+
 	//draw "crumbs" placed by player
 	for(int i = 0; i < maxBread; i++)
 	{
@@ -1053,6 +1068,8 @@ void ColoredCubeApp::updateL1(float dt)
 	if(perspective)
 		outs << "\nTop Down Remaining: " << topDownTime;
 	mTimer = outs.str();
+
+	testTracker.update(dt,&player,true,&maze);
 
 	for(int i = 0; i < totalKeys; i++)
 	{
@@ -1197,6 +1214,11 @@ void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* scree
 	//set ceiling texture here
 	maze.setCeilTex(screen,brickSpecMap);
 	maze.update(dt);
+}
+
+void ColoredCubeApp::updatePerspectiveSwitch(float dt)
+{
+	gamestate = nextState;
 }
 
 void ColoredCubeApp::drawTitle()
@@ -1395,6 +1417,12 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	Location start = maze.getStartPosition();
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
+
+	Location s;
+	s.x = 2;
+	s.z = 2;
+	testTracker.setPath(&maze,s,maze.getStartPosition());
+	testTracker.setPosition(Vector3(maze.cellToPx(s).x,0,maze.cellToPx(s).z));
 
 	//put the goal box in the correct location
 	Location end = maze.getEndPosition();
