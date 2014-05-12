@@ -3,9 +3,6 @@
 //
 // Demonstrates coloring.
 //
-// Controls:
-//		'A'/'D'/'W'/'S' - Rotate 
-//
 //=============================================================================
 
 //update postion
@@ -43,8 +40,6 @@ public:
 	ColoredCubeApp(HINSTANCE hInstance);
 	~ColoredCubeApp();
 
-	Vector3 moveCube();
-
 	void initApp();
 	void onResize();
 	void updateScene(float dt);
@@ -73,10 +68,7 @@ private:
 	void drawWin();
 
 	void dropBread(Vector3 pos);
-
 	void shootProjectile(Vector3 pos);
-
-	void manageMazeDenizen(GameObject, float, Maze&);
 
 	ID3D10BlendState* mTransparentBS;
 
@@ -92,8 +84,6 @@ private:
 	float topDownTime;
 	float maxTopDownTime;
 	Light* totalLights[100];
-	//LightObject lightObject1;
-	//Input* input;
 	float score;
 	Quad quad1;
 	Line line, line2, line3;
@@ -113,7 +103,6 @@ private:
 
 	D3DXCOLOR ambientLight,hurtLight;
 
-	//SoundItem* testSound;
 	Mesh key;
 	GameObject keyObject[10];
 
@@ -125,12 +114,8 @@ private:
 
 	TrackingEnemies testTracker;
 
-	//GameObject floor,wall1,wall2,wall3,wall4;
-	//EnemyObject enemy;
 	EnemyHoard ghosts;
-	//Mesh testMesh;
 	FlashLightObject flashLightObject;
-	//BatteryObject batteryObject;
 	BatteryObject batteries[20];
 	LightObject lamps[30];
 
@@ -154,7 +139,8 @@ private:
 	int mazeZ;
 
 	float timeBetweenTopDown;
-
+	
+	//Debounce checkers
 	bool perspectiveDebounced;
 	bool breadDebounced;
 	bool projectileDebounced;
@@ -204,19 +190,17 @@ private:
 
 	ID3D10ShaderResourceView* splashScreen;
 
+	//Camera Variables
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 	D3DXMATRIX mWVP;
-
-	//my edits
-	D3DXMATRIX worldBox1, worldBox2;
-
 	D3DXVECTOR3 mEyePos;
 	float mRadius;
 	float mTheta;
 	float mPhi;
 	float sensitivity;
 
+	//Fog Switch
 	bool fog;
 
     float timer;
@@ -232,31 +216,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-
 	ColoredCubeApp theApp(hInstance);
-	
 	theApp.initApp();
-
 	return theApp.run();
-}
-
-Vector3 ColoredCubeApp::moveCube()
-{
-	Vector3 direction = Vector3(0,0,0);
-	int playerSpeed = 20;
-
-	if(GetAsyncKeyState('J') & 0x8000) direction.z = -1;
-	if(GetAsyncKeyState('L') & 0x8000) direction.z = 1;
-	if(GetAsyncKeyState('I') & 0x8000) direction.x = -1;
-	if(GetAsyncKeyState('K') & 0x8000) direction.x = 1;
-	//if(GetAsyncKeyState('O') & 0x8000) direction.y = 1;
-	//if(GetAsyncKeyState('L') & 0x8000) direction.y = -1;
-
-	if(direction!=Vector3(0,0,0))
-		D3DXVec3Normalize(&direction,&direction);
-
-	direction *= playerSpeed;
-	return direction;
 }
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
@@ -416,6 +378,7 @@ void ColoredCubeApp::initApp()
 	buildFX();
 	buildVertexLayouts();
 
+	//Build Maze
 	Dimension d;
 	d.x = 10;
 	d.z = 10;
@@ -438,8 +401,7 @@ void ColoredCubeApp::initApp()
 	billboard.setProjection(mfxProjMatrix);
 	billboard.setTex(boxTexture,standardSpecMap);
 
-	//testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
-
+	//Projectile and Bread values
 	breadNumber = 0;
 	maxBread = 30;
 	projectileNum = 10;
@@ -453,6 +415,7 @@ void ColoredCubeApp::initApp()
 
 	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
+	//Initialize Player
 	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(2,2,2));
 	player.setTex(boxTexture,standardSpecMap);
 	player.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
@@ -467,8 +430,7 @@ void ColoredCubeApp::initApp()
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
-	//lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	//lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	//Intialize Lamp Lights
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.75,0.75,0.75));
@@ -484,6 +446,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize Keys
 	key.init(md3dDevice,1,"item1.txt");
 	for(int i = 0; i < totalKeys; i++)
 	{
@@ -510,6 +473,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize End Cube
 	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
 	endCube.setTex(boxTexture,iceSpecMap);
 	endCube.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
@@ -533,7 +497,7 @@ void ColoredCubeApp::initApp()
 	totalLights[lightsAdded] = &endLight;
 	lightsAdded++;
 
-	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	//Initialize Batteries
 	for(int i = 0; i < numBatteries; i++)
 	{
 		batteries[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.5,0.5,0.5));
@@ -544,6 +508,7 @@ void ColoredCubeApp::initApp()
 		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
+	//Initialize Ghosts
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,4*sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(1,1,1));
 	ghosts.setBlend(mTransparentBS);
 	ghosts.setTex(brickTexture,iceSpecMap);
@@ -555,6 +520,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize Bread
 	for(int i = 0; i < maxBread; i++)
 	{
 		breadCrumbs[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
@@ -563,6 +529,7 @@ void ColoredCubeApp::initApp()
 		breadCrumbs[i].setTex(ceilingTexture,iceSpecMap);
 	}
 
+	//Initialize Projectiles
 	for(int i = 0; i < maxProjectile; i++)
 	{
 		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
@@ -571,7 +538,6 @@ void ColoredCubeApp::initApp()
 		projectile[i].setTex(projectileTexture,iceSpecMap);
 	}
 
-	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
     audio = new Audio();
     if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
@@ -585,19 +551,10 @@ void ColoredCubeApp::initApp()
             //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
         }
     }
-	//set up the camera
+	//Set up the camera
 	camera.setHeightAndWidth(mClientWidth,mClientHeight);
 
 	audio->playCue(MUSIC);
-
-	//input->initialize(this->getMainWnd(), false);  
-	//sound object
-	/*testSound = new SoundItem(audio,Vector3(0,0,0),50);
-	static string sounds[] = {"gun_sound_effect","Light Bulb Breaking-SoundBible.com-53066515"};
-	testSound->setSounds(sounds,2);*/
-
-	
-
 }
 
 void ColoredCubeApp::onResize()
@@ -648,7 +605,7 @@ void ColoredCubeApp::updateScene(float dt)
 	Location playerLoc;
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
-	//collision detection
+	//Player collision detection
 	if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
@@ -712,6 +669,7 @@ void ColoredCubeApp::updateScene(float dt)
 		flashLightObject.lightSource.dir = camera.getTarget();
 	}
 
+	//Sensitivity controls
 	if(GetAsyncKeyState('1') & 0x8000)
 	{
 		sensitivity = 0.5f;
@@ -733,6 +691,7 @@ void ColoredCubeApp::updateScene(float dt)
 		sensitivity = 3.0f;
 	}
 
+	//Leave bread
 	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
 		dropBread(player.getPosition());
@@ -743,6 +702,7 @@ void ColoredCubeApp::updateScene(float dt)
 		breadDebounced = false;
 	}
 
+	//Shoot projectile
 	if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
 	{
 		shootProjectile(player.getPosition());
@@ -753,6 +713,7 @@ void ColoredCubeApp::updateScene(float dt)
 		projectileDebounced = false;
 	}
 
+	//Change perspective
 	if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
 	{
 		perspective = !perspective;
@@ -777,11 +738,13 @@ void ColoredCubeApp::updateScene(float dt)
 		perspective = false;
 	}
 
+	//Update Lamp Lights
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].update(dt);
 	}
 
+	//Update Batteries
 	for(int i = 0; i < numBatteries; i++)
 	{
 		batteries[i].update(dt);
@@ -796,12 +759,14 @@ void ColoredCubeApp::updateScene(float dt)
 		}
 	}
 
+	//Update Bread
 	for(int i = 0; i < maxBread; i++)
 	{
 		if(breadCrumbs[i].getActiveState())
 			breadCrumbs[i].update(dt);
 	}
 
+	//Update Projectiles
 	for(int i = 0; i < maxProjectile; i++)
 	{
 		if(projectile[i].getActiveState())
@@ -811,7 +776,7 @@ void ColoredCubeApp::updateScene(float dt)
 			Location playerLoc;
 			playerLoc.x = projectile[i].getPosition().x;
 			playerLoc.z = projectile[i].getPosition().z;
-			//collision detection
+			//Collision detection
 			if(projectile[i].getPosition()!=oldP)
 			{
 				if(maze.collided(playerLoc))
@@ -823,8 +788,8 @@ void ColoredCubeApp::updateScene(float dt)
 				}
 			}
 		}
-		//projectile[i].update(dt);
 	}
+	//Game state switching
 	switch(gamestate)
 	{
 	case title:
@@ -1505,6 +1470,6 @@ void ColoredCubeApp::shootProjectile(Vector3 pos)
 		 return;
 	 projectile[projectileNum].setPosition(pos);
 	 projectile[projectileNum].setActive();
-	 camera.moveObject(projectile[projectileNum],30.0f, camera.getTarget(),perspective);
+	 camera.moveObject(projectile[projectileNum],40.0f, camera.getTarget(),perspective);
 	 projectileNum++;
  }
