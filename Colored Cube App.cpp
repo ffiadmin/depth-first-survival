@@ -196,6 +196,7 @@ private:
 	ID3D10ShaderResourceView* l1Splash;
 	ID3D10ShaderResourceView* l2Splash;
 	ID3D10ShaderResourceView* l3Splash;
+	ID3D10ShaderResourceView* projectileTexture;
 
 	ID3D10ShaderResourceView* standardSpecMap;
 	ID3D10ShaderResourceView* brickSpecMap;
@@ -377,6 +378,9 @@ void ColoredCubeApp::initApp()
 	//level 3 splash
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"l3Splash.jpg", 0, 0, &l3Splash, 0 ));
+	//Projectile Texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"projectile.jpg", 0, 0, &projectileTexture, 0 ));
 
 	//standard spec map
 	standardSpecMap;
@@ -561,10 +565,10 @@ void ColoredCubeApp::initApp()
 
 	for(int i = 0; i < maxProjectile; i++)
 	{
-		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
+		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 		projectile[i].setInActive();
 		projectile[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
-		projectile[i].setTex(ceilingTexture,iceSpecMap);
+		projectile[i].setTex(projectileTexture,iceSpecMap);
 	}
 
 	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
@@ -1501,6 +1505,6 @@ void ColoredCubeApp::shootProjectile(Vector3 pos)
 		 return;
 	 projectile[projectileNum].setPosition(pos);
 	 projectile[projectileNum].setActive();
-	 camera.moveObject(projectile[projectileNum],20.0f, camera.getTarget(),perspective);
+	 camera.moveObject(projectile[projectileNum],30.0f, camera.getTarget(),perspective);
 	 projectileNum++;
  }
