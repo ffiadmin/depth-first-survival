@@ -3,9 +3,6 @@
 //
 // Demonstrates coloring.
 //
-// Controls:
-//		'A'/'D'/'W'/'S' - Rotate 
-//
 //=============================================================================
 
 //update postion
@@ -34,14 +31,14 @@
 #include "EnemyHoard.h"
 #include "LightObject.h"
 #include "Maze.h"
+#include "TrackingEnemies.h"
+#include "Monster.h"
 
 class ColoredCubeApp : public D3DApp
 {
 public:
 	ColoredCubeApp(HINSTANCE hInstance);
 	~ColoredCubeApp();
-
-	Vector3 moveCube();
 
 	void initApp();
 	void onResize();
@@ -61,6 +58,7 @@ private:
 	void updateL4(float dt);
 	void updateSplashScreen(float dt,ID3D10ShaderResourceView* screen);
 	void updateTransition(float dt);
+	void updatePerspectiveSwitch(float dt);
 	void updateLights();
 	void drawTitle();
 	void drawControls();
@@ -70,10 +68,7 @@ private:
 	void drawWin();
 
 	void dropBread(Vector3 pos);
-
 	void shootProjectile(Vector3 pos);
-
-	void manageMazeDenizen(GameObject, float, Maze&);
 
 	ID3D10BlendState* mTransparentBS;
 
@@ -85,16 +80,16 @@ private:
 	playerControls camera;
 	Light lights[10];
 	Light* keyLights[10];
+	Mesh pokey;
 	int lightsGoingInShader;
 	float topDownTime;
 	float maxTopDownTime;
 	Light* totalLights[100];
-	//LightObject lightObject1;
-	//Input* input;
 	float score;
 	Quad quad1;
 	Line line, line2, line3;
 	Box mBox;
+	Monster mon;
 	Billboard testBoard;
 	Maze maze;
 	bool perspective;
@@ -107,9 +102,8 @@ private:
 	bool goal;
 	int currentKeys, totalKeys;
 
-	D3DXCOLOR ambientLight,hurtLight;
+	D3DXCOLOR ambientLight;
 
-	//SoundItem* testSound;
 	Mesh key;
 	GameObject keyObject[10];
 
@@ -118,12 +112,13 @@ private:
 	GameObject endCube;
 	Light endLight;
 	Light ambientLighting;
-	//GameObject floor,wall1,wall2,wall3,wall4;
-	//EnemyObject enemy;
+
+	TrackingEnemies testTracker;
+	TrackingEnemies testTracker2;
+	TrackingEnemies dungeonMaster;
+
 	EnemyHoard ghosts;
-	//Mesh testMesh;
 	FlashLightObject flashLightObject;
-	//BatteryObject batteryObject;
 	BatteryObject batteries[20];
 	LightObject lamps[30];
 
@@ -147,7 +142,8 @@ private:
 	int mazeZ;
 
 	float timeBetweenTopDown;
-
+	
+	//Debounce checkers
 	bool perspectiveDebounced;
 	bool breadDebounced;
 	bool projectileDebounced;
@@ -189,6 +185,8 @@ private:
 	ID3D10ShaderResourceView* l1Splash;
 	ID3D10ShaderResourceView* l2Splash;
 	ID3D10ShaderResourceView* l3Splash;
+	ID3D10ShaderResourceView* l4Splash;
+	ID3D10ShaderResourceView* projectileTexture;
 
 	ID3D10ShaderResourceView* standardSpecMap;
 	ID3D10ShaderResourceView* brickSpecMap;
@@ -196,20 +194,22 @@ private:
 
 	ID3D10ShaderResourceView* splashScreen;
 
+	//Camera Variables
 	D3DXMATRIX mView;
 	D3DXMATRIX mProj;
 	D3DXMATRIX mWVP;
-
-	//my edits
-	D3DXMATRIX worldBox1, worldBox2;
-
 	D3DXVECTOR3 mEyePos;
 	float mRadius;
 	float mTheta;
 	float mPhi;
 	float sensitivity;
 
+	float hitTimer;
+
+	//Fog Switch
 	bool fog;
+
+	int guardsHit;
 
     float timer;
     std::wstring mTimer;
@@ -224,31 +224,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-
 	ColoredCubeApp theApp(hInstance);
-	
 	theApp.initApp();
-
 	return theApp.run();
-}
-
-Vector3 ColoredCubeApp::moveCube()
-{
-	Vector3 direction = Vector3(0,0,0);
-	int playerSpeed = 20;
-
-	if(GetAsyncKeyState('J') & 0x8000) direction.z = -1;
-	if(GetAsyncKeyState('L') & 0x8000) direction.z = 1;
-	if(GetAsyncKeyState('I') & 0x8000) direction.x = -1;
-	if(GetAsyncKeyState('K') & 0x8000) direction.x = 1;
-	//if(GetAsyncKeyState('O') & 0x8000) direction.y = 1;
-	//if(GetAsyncKeyState('L') & 0x8000) direction.y = -1;
-
-	if(direction!=Vector3(0,0,0))
-		D3DXVec3Normalize(&direction,&direction);
-
-	direction *= playerSpeed;
-	return direction;
 }
 
 ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
@@ -259,6 +237,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	{
 		totalLights[i] = 0;
 	}
+	hitTimer = 0;
+	guardsHit = 0;
 	maxTopDownTime = 10;
 	topDownTime = 0;
 	breadDebounced = false;
@@ -268,8 +248,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	goal = false;
 	currentKeys = 0;
 	totalKeys = 10;
-	numLightObjects = 10;
-	numBatteries = 20;
+	numLightObjects = 7;
+	numBatteries = 10;
 	player.setHealth(10);
 	lightsGoingInShader = 10;
 	prevLightType = 0;
@@ -370,6 +350,11 @@ void ColoredCubeApp::initApp()
 	//level 3 splash
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"l3Splash.jpg", 0, 0, &l3Splash, 0 ));
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"l4Splash.jpg", 0, 0, &l4Splash, 0 ));
+	//Projectile Texture
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"projectile.jpg", 0, 0, &projectileTexture, 0 ));
 
 	//standard spec map
 	standardSpecMap;
@@ -385,8 +370,6 @@ void ColoredCubeApp::initApp()
 	//0: Parallel
 	//1: Point
 	//2: Spot
-
-	hurtLight = D3DXCOLOR(1,0,0,1);
 
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	//ambientLight = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
@@ -405,6 +388,9 @@ void ColoredCubeApp::initApp()
 	buildFX();
 	buildVertexLayouts();
 
+	pokey.init(md3dDevice,1,"pokey.txt");
+
+	//Build Maze
 	Dimension d;
 	d.x = 10;
 	d.z = 10;
@@ -420,14 +406,14 @@ void ColoredCubeApp::initApp()
 	camera.init(&maze);
 
 	mBox.init(md3dDevice, 1.0f);
+	mon.init(md3dDevice, 1.0f);
 
 	testBoard.init(md3dDevice,Vector3(0,0,0),Vector2(24,24));
 	billboard.init(&testBoard,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 	billboard.setProjection(mfxProjMatrix);
 	billboard.setTex(boxTexture,standardSpecMap);
 
-	//testMesh.init(md3dDevice,1.0f,"surfrev2.dat");
-
+	//Projectile and Bread values
 	breadNumber = 0;
 	maxBread = 30;
 	projectileNum = 10;
@@ -441,6 +427,7 @@ void ColoredCubeApp::initApp()
 
 	quad1.init(md3dDevice,1,D3DXCOLOR(0.5,0.25,0.1,1.0));
 
+	//Initialize Player
 	player.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(10,0,10),Vector3(0,0,0),0,Vector3(2,2,2));
 	player.setTex(boxTexture,standardSpecMap);
 	player.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
@@ -448,13 +435,17 @@ void ColoredCubeApp::initApp()
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
 
+	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+	testTracker2.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+
+	dungeonMaster.init(&pokey,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
+
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
 	flashLightObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 	flashLightObject.setRotation(Vector3(ToRadian(90),0,0));
 
-	//lightObject1.init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
-	//lightObject1.setTex(mfxDiffuseMapVar,mfxSpecMapVar,L"WoodCrate01.dds",L"ice.dds");
+	//Intialize Lamp Lights
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,2,Vector3(10,3,0),Vector3(0,0,0),0,Vector3(0.75,0.75,0.75));
@@ -470,6 +461,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize Keys
 	key.init(md3dDevice,1,"item1.txt");
 	for(int i = 0; i < totalKeys; i++)
 	{
@@ -496,6 +488,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize End Cube
 	endCube.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
 	endCube.setTex(boxTexture,iceSpecMap);
 	endCube.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
@@ -519,7 +512,7 @@ void ColoredCubeApp::initApp()
 	totalLights[lightsAdded] = &endLight;
 	lightsAdded++;
 
-	//batteryObject.init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+	//Initialize Batteries
 	for(int i = 0; i < numBatteries; i++)
 	{
 		batteries[i].init(md3dDevice,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,5),Vector3(0,0,0),0,Vector3(0.5,0.5,0.5));
@@ -530,6 +523,7 @@ void ColoredCubeApp::initApp()
 		batteries[i].setPosition(Vector3(spot.x,-1,spot.z));
 	}
 
+	//Initialize Ghosts
 	ghosts.init(md3dDevice,mfxWVPVar,mfxWorldVar,4*sqrt(2.0f),Vector3(5,0,0),Vector3(0,0,0),10,Vector3(1,1,1));
 	ghosts.setBlend(mTransparentBS);
 	ghosts.setTex(brickTexture,iceSpecMap);
@@ -541,6 +535,7 @@ void ColoredCubeApp::initApp()
 		lightsAdded++;
 	}
 
+	//Initialize Bread
 	for(int i = 0; i < maxBread; i++)
 	{
 		breadCrumbs[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
@@ -549,15 +544,15 @@ void ColoredCubeApp::initApp()
 		breadCrumbs[i].setTex(ceilingTexture,iceSpecMap);
 	}
 
+	//Initialize Projectiles
 	for(int i = 0; i < maxProjectile; i++)
 	{
-		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(2,2,2));
+		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,4*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 		projectile[i].setInActive();
 		projectile[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
-		projectile[i].setTex(ceilingTexture,iceSpecMap);
+		projectile[i].setTex(projectileTexture,iceSpecMap);
 	}
 
-	//Normalize(&mParallelLight.dir,&(flashLightObject.getPosition()-wall1.getPosition()));
 	// init sound system
     audio = new Audio();
     if (*WAVE_BANK != '\0' && *SOUND_BANK != '\0')  // if sound files defined
@@ -571,19 +566,10 @@ void ColoredCubeApp::initApp()
             //    throw(GameError(gameErrorNS::FATAL_ERROR, "Failed to initialize sound system."));
         }
     }
-	//set up the camera
+	//Set up the camera
 	camera.setHeightAndWidth(mClientWidth,mClientHeight);
 
 	audio->playCue(MUSIC);
-
-	//input->initialize(this->getMainWnd(), false);  
-	//sound object
-	/*testSound = new SoundItem(audio,Vector3(0,0,0),50);
-	static string sounds[] = {"gun_sound_effect","Light Bulb Breaking-SoundBible.com-53066515"};
-	testSound->setSounds(sounds,2);*/
-
-	
-
 }
 
 void ColoredCubeApp::onResize()
@@ -634,7 +620,7 @@ void ColoredCubeApp::updateScene(float dt)
 	Location playerLoc;
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
-	//collision detection
+	//Player collision detection
 	if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
@@ -698,6 +684,7 @@ void ColoredCubeApp::updateScene(float dt)
 		flashLightObject.lightSource.dir = camera.getTarget();
 	}
 
+	//Sensitivity controls
 	if(GetAsyncKeyState('1') & 0x8000)
 	{
 		sensitivity = 0.5f;
@@ -719,6 +706,7 @@ void ColoredCubeApp::updateScene(float dt)
 		sensitivity = 3.0f;
 	}
 
+	//Leave bread
 	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
 		dropBread(player.getPosition());
@@ -729,26 +717,36 @@ void ColoredCubeApp::updateScene(float dt)
 		breadDebounced = false;
 	}
 
-	if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
+	//Shoot projectile
+	if(gamestate == level3)
 	{
-		shootProjectile(player.getPosition());
-		projectileDebounced = true;
-	}
-	if(!(GetAsyncKeyState('G') & 0x8000))
-	{
-		projectileDebounced = false;
+		if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
+		{
+			shootProjectile(player.getPosition());
+			projectileDebounced = true;
+		}
+		if(!(GetAsyncKeyState('G') & 0x8000))
+		{
+			projectileDebounced = false;
+		}
 	}
 
-	if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
+	//Change perspective
+	if(gamestate == level1 || gamestate == level2 || gamestate == level3 || gamestate == level4)
 	{
-		perspective = !perspective;
-		perspectiveDebounced = true;
-		//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
-	}
-	if(!(GetAsyncKeyState('R') & 0x8000))
-	{
-		perspectiveDebounced = false;
-		//ambientLighting.ambient = ambientLight;
+		if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
+		{
+			perspective = !perspective;
+			perspectiveDebounced = true;
+			nextState = gamestate;
+			gamestate = viewSwitch;
+			//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
+		}
+		if(!(GetAsyncKeyState('R') & 0x8000))
+		{
+			perspectiveDebounced = false;
+			//ambientLighting.ambient = ambientLight;
+		}
 	}
 
 	if(perspective)
@@ -761,11 +759,13 @@ void ColoredCubeApp::updateScene(float dt)
 		perspective = false;
 	}
 
+	//Update Lamp Lights
 	for(int i = 0; i < numLightObjects; i++)
 	{
 		lamps[i].update(dt);
 	}
 
+	//Update Batteries
 	for(int i = 0; i < numBatteries; i++)
 	{
 		batteries[i].update(dt);
@@ -774,18 +774,23 @@ void ColoredCubeApp::updateScene(float dt)
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
-			projectileNum--;
-			if(projectileNum < 0)
-				projectileNum = 0;
+			if(gamestate == level3)
+			{
+				projectileNum--;
+				if(projectileNum < 0)
+					projectileNum = 0;	
+			}
 		}
 	}
 
+	//Update Bread
 	for(int i = 0; i < maxBread; i++)
 	{
 		if(breadCrumbs[i].getActiveState())
 			breadCrumbs[i].update(dt);
 	}
 
+	//Update Projectiles
 	for(int i = 0; i < maxProjectile; i++)
 	{
 		if(projectile[i].getActiveState())
@@ -795,7 +800,7 @@ void ColoredCubeApp::updateScene(float dt)
 			Location playerLoc;
 			playerLoc.x = projectile[i].getPosition().x;
 			playerLoc.z = projectile[i].getPosition().z;
-			//collision detection
+			//Collision detection
 			if(projectile[i].getPosition()!=oldP)
 			{
 				if(maze.collided(playerLoc))
@@ -807,8 +812,8 @@ void ColoredCubeApp::updateScene(float dt)
 				}
 			}
 		}
-		//projectile[i].update(dt);
 	}
+	//Game state switching
 	switch(gamestate)
 	{
 	case title:
@@ -833,7 +838,7 @@ void ColoredCubeApp::updateScene(float dt)
 		break;
 	case level4:
 		updateLights();
-		updateL3(dt);
+		updateL4(dt);
 		break;
 	case gameover:
 		updateSplashScreen(dt,loseScreenTexture);
@@ -848,6 +853,10 @@ void ColoredCubeApp::updateScene(float dt)
 		lights[0] = ambientLighting;
 	case transition:
 		updateTransition(dt);
+		lights[1] = ambientLighting;
+		break;
+	case viewSwitch:
+		updatePerspectiveSwitch(dt);
 		lights[1] = ambientLighting;
 		break;
 	}
@@ -969,6 +978,12 @@ void ColoredCubeApp::drawScene()
 	D3D10_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
 
+	if(gamestate == level3)
+	{
+		testTracker.draw(mView,mProj,mTechColor2);
+		testTracker2.draw(mView,mProj,mTechColor2);
+	}
+
 	//draw the maze
 	if(fog)
 		maze.draw(texTech,mView,mProj,mTechFogCeil);
@@ -985,12 +1000,20 @@ void ColoredCubeApp::drawScene()
 	}
 
 	//draw the end cube
-	if(gamestate == level3)
+	if(gamestate == level4)
+	{
 		endCube.draw(mView,mProj,texTech);
+		dungeonMaster.draw(mView,mProj,mTechColor2);
+	}
 
 	//draw the origin
 	//origin.draw(mView, mProj, mTech);
 	
+	if(gamestate == level3)
+	{
+		testTracker.draw(mView,mProj,mTechColor2);
+	}
+
 	//draw "crumbs" placed by player
 	for(int i = 0; i < maxBread; i++)
 	{
@@ -1025,7 +1048,7 @@ void ColoredCubeApp::drawScene()
 
 	billboard.draw(mView,mProj,mTechBillboard);
 
-	if(gamestate == level2 || gamestate == level3)
+	if(gamestate == level2 || gamestate == level3 || gamestate == level4)
 	{
 		ghosts.draw(mView,mProj,texTech);
 	}
@@ -1054,6 +1077,8 @@ void ColoredCubeApp::updateL1(float dt)
 		outs << "\nTop Down Remaining: " << topDownTime;
 	mTimer = outs.str();
 
+	//testTracker.update(dt,&player,true,&maze);
+
 	for(int i = 0; i < totalKeys; i++)
 	{
 		keyObject[i].update(dt);
@@ -1072,11 +1097,64 @@ void ColoredCubeApp::updateL3(float dt)
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	std::wostringstream outs; 
 	
+	testTracker.update(dt,&player,false,&maze);
+	testTracker2.update(dt,&player,false,&maze);
+
+	for(int i = 0; i<maxProjectile; i++)
+	{
+		if(testTracker.collided(&projectile[i]))
+		{
+			projectile[i].setInActive();
+			testTracker.setInActive();
+			guardsHit++;
+			audio->playCue(G_HIT);
+		}
+		if(testTracker2.collided(&projectile[i]))
+		{
+			projectile[i].setInActive();
+			testTracker2.setInActive();
+			guardsHit++;
+			audio->playCue(G_HIT);
+		}
+	}
+
+	if(guardsHit == 2)
+	{
+		goal = true;
+	}
+
+	if(testTracker.collided(&player))
+	{
+		hitTimer+=dt;
+		if(hitTimer>=1)
+		{
+			player.setHealth(player.getHealth()-dt);
+			audio->playCue(WILHELM);
+			hitTimer = 0;
+		}
+	}
+	else if(testTracker2.collided(&player))
+	{
+		hitTimer+=dt;
+		if(hitTimer>=1)
+		{
+			player.setHealth(player.getHealth()-dt);
+			audio->playCue(WILHELM);
+			hitTimer = 0;
+		}
+	}
+	else
+	{
+		hitTimer = 0;
+	}
+
 	outs.precision(2);
 	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	outs << "\nProjectiles: " << maxProjectile-projectileNum;
+	outs << "\nGuards Remaining: " << 2-guardsHit;
 	if(topDownTime == maxTopDownTime)
 		outs << "\nTop Down Available";
 	if(perspective)
@@ -1093,7 +1171,6 @@ void ColoredCubeApp::updateL3(float dt)
 		if(player.collided(&ghosts.getEnemies()[i]))
 		{
 			player.setHealth(player.getHealth()-1);
-			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
 			audio->playCue(P_HIT);
@@ -1148,7 +1225,6 @@ void ColoredCubeApp::updateL2(float dt)
 		if(player.collided(&ghosts.getEnemies()[i]))
 		{
 			player.setHealth(player.getHealth()-1);
-			lights[1].ambient = hurtLight;
 			//make flash take longer
 			ghosts.getEnemies()[i].setInActive();
 			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
@@ -1182,7 +1258,73 @@ void ColoredCubeApp::updateL2(float dt)
 
 void ColoredCubeApp::updateL4(float dt)
 {
+	std::wostringstream outs;
+	outs.precision(2);
+	outs << L"Health: " << player.getHealth() << L"\n";
+	outs.precision(3);
+	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	if(topDownTime == maxTopDownTime)
+		outs << "\nTop Down Available";
+	if(perspective)
+		outs << "\nTop Down Remaining: " << topDownTime;
+	mTimer = outs.str();
+	mTimer = outs.str();
 
+	dungeonMaster.update(dt,&player,true,&maze);
+
+	if(dungeonMaster.collided(&player))
+	{
+		player.setHealth(player.getHealth()-2);
+		Location playerStart = maze.getStartPosition();
+		playerStart = maze.cellToPx(playerStart);
+		player.setPosition(Vector3(playerStart.x,0,playerStart.z));
+		Location masterStart;
+		masterStart.x = rand()%5;
+		masterStart.z = rand()%5;
+		Location temp = maze.cellToPx(masterStart);
+		dungeonMaster.setPosition(Vector3(temp.x,0,temp.z));
+		dungeonMaster.setPath(&maze,maze.pxToCell(masterStart),maze.getStartPosition());
+		audio->playCue(WILHELM);
+	}
+
+	ghosts.update(dt,&player,camera.getTarget(),perspective);
+	//ghost collision detection
+	
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		//player gets hit by a ghost
+		if(player.collided(&ghosts.getEnemies()[i]))
+		{
+			player.setHealth(player.getHealth()-1);
+			//make flash take longer
+			ghosts.getEnemies()[i].setInActive();
+			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
+			audio->playCue(P_HIT);
+		}
+	}
+
+	if(endCube.collided(&player))
+	{
+		goal = true;
+	}
+
+	//flashlight ghost attack
+	if(flashLightObject.getOn())
+	{
+		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		{
+			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+			{
+				ghosts.getEnemies()[i].setHit(true);
+				audio->playCue(G_HIT);
+			}
+			else
+			{
+				ghosts.getEnemies()[i].setHit(false);
+			}
+		}
+	}
 }
 
 void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* screen)
@@ -1197,6 +1339,11 @@ void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* scree
 	//set ceiling texture here
 	maze.setCeilTex(screen,brickSpecMap);
 	maze.update(dt);
+}
+
+void ColoredCubeApp::updatePerspectiveSwitch(float dt)
+{
+	gamestate = nextState;
 }
 
 void ColoredCubeApp::drawTitle()
@@ -1332,18 +1479,22 @@ void ColoredCubeApp::updateGameState()
 			sceneAlpha = 1.0f;
 			fog = false;
        }
-	   if(gamestate == level3 && goal)
+	   if(gamestate == level3 && goal||(GetAsyncKeyState('N') & 0x8000))
 	   {
 		   goal = false;
 		   gamestate = transition;
+		   nextState = level4;
 		   lights[1] = ambientLighting;
-			transitionState = win;
+		   //change to level 4 splash screen
+		   splashScreen = l4Splash;
+			transitionState = splash;
 			sceneAlpha = 1.0f;
 			fog = false;
 	   }
 	   if(gamestate == level4 && goal)
 	   {
-		   gamestate = win;//WOOHOO!!!
+		   gamestate = transition;//WOOHOO!!!
+		   transitionState = win;
 	   }
 	   if(gamestate == splash && (GetAsyncKeyState(VK_SPACE) & 0x8000))
 	   {
@@ -1380,6 +1531,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		projectile[i].setInActive();
 	}
 
+	guardsHit = 0;
 	mazeX = x;
 	mazeZ = z;
 	currentKeys = 0;
@@ -1396,23 +1548,43 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
 
+	Location s;
+	s.x = 2;
+	s.z = 2;
+	//testTracker.setPath(&maze,s,maze.getStartPosition());
+	testTracker.setPosition(Vector3(maze.cellToPx(s).x,0,maze.cellToPx(s).z));
+
 	//put the goal box in the correct location
 	Location end = maze.getEndPosition();
 	end = maze.cellToPx(end);
-	endCube.setPosition(Vector3(end.x,0,end.z));
+	if(gamestate == level4)
+	{
+		endCube.setPosition(Vector3(end.x,0,end.z));
+		endLight.pos = D3DXVECTOR3(end.x,10,end.z);
+		Location temp;
+		temp.x = rand()%9;
+		temp.z = rand()%9;
+		dungeonMaster.setPath(&maze,temp,maze.getStartPosition());
+		dungeonMaster.setPosition(Vector3(maze.cellToPx(temp).x,0,maze.cellToPx(temp).z));
+	}
 
-	//set up the end light
-	endLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	endLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 0.3f, 1.0f);
-	endLight.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	endLight.att.x    = 1.0f;
-	endLight.att.y    = 0.0f;
-	endLight.att.z    = 0.0f;
-	endLight.spotPow  = 10;
-	endLight.range    = 100;
-	endLight.pos = D3DXVECTOR3(end.x,10,end.z);
-	endLight.dir = D3DXVECTOR3(0, -1, 0);	
-	endLight.lightType.x = 2;
+	if(gamestate == level3)
+	{
+		Location trackerStart;
+		trackerStart.x = rand()%8;
+		trackerStart.z = rand()%8;
+		Location trackerEnd;
+		trackerEnd.x = rand()%8;
+		trackerEnd.z = rand()%8;
+		testTracker.setPath(&maze,trackerStart,trackerEnd);
+		testTracker.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
+		trackerStart.x = rand()%8;
+		trackerStart.z = rand()%8;
+		trackerEnd.x = rand()%8;
+		trackerEnd.z = rand()%8;
+		testTracker2.setPath(&maze,trackerStart,trackerEnd);
+		testTracker2.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
+	}
 
 	//reset the maze textures
 	maze.setTex(brickTexture,brickSpecMap);	
@@ -1429,7 +1601,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 	}
-	if(keys)
+	if(gamestate == level1 && keys)
 	{
 		for(int i = 0; i < totalKeys; i++)
 		{
@@ -1470,6 +1642,6 @@ void ColoredCubeApp::shootProjectile(Vector3 pos)
 		 return;
 	 projectile[projectileNum].setPosition(pos);
 	 projectile[projectileNum].setActive();
-	 camera.moveObject(projectile[projectileNum],20.0f, camera.getTarget(),perspective);
+	 camera.moveObject(projectile[projectileNum],40.0f, camera.getTarget(),perspective);
 	 projectileNum++;
  }
