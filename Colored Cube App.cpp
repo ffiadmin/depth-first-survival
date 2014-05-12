@@ -718,7 +718,7 @@ void ColoredCubeApp::updateScene(float dt)
 	}
 
 	//Shoot projectile
-	if(gamestate == level3)
+	if(gamestate == level3 || gamestate == level4)
 	{
 		if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
 		{
@@ -774,7 +774,7 @@ void ColoredCubeApp::updateScene(float dt)
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
-			if(gamestate == level3)
+			if(gamestate == level3 || gamestate == level4)
 			{
 				projectileNum--;
 				if(projectileNum < 0)
@@ -1259,6 +1259,7 @@ void ColoredCubeApp::updateL4(float dt)
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	outs << "\nProjectiles: " << maxProjectile-projectileNum;
 	if(topDownTime == maxTopDownTime)
 		outs << "\nTop Down Available";
 	if(perspective)
