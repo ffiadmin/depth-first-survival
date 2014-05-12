@@ -86,7 +86,7 @@ struct Node {
 };
 
 struct Solution {
-	Solution() { location.x = -1; location.z = -1; next = NULL; previous = NULL; }
+	Solution() { end = false; location.x = -1; location.z = -1; next = NULL; previous = NULL; start = false; }
 	~Solution() {
 		/*
  		if(next != NULL && location.x != NULL && location.z != NULL && location.x >= 0 && location.z >= 0) {
@@ -158,9 +158,11 @@ struct Solution {
 		location.z = n->location.z;
 	}
 
+	bool end;
 	Location location;
 	Solution *next;
 	Solution *previous;
+	bool start;
 };
 
 class Maze {

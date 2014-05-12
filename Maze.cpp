@@ -806,7 +806,9 @@ Solution Maze::solve(Location from, Location to) {
 	cStartNode = startNode;
 
 	solEnd = endNode;
+	solEnd.end = true;
 	solStart = startNode;
+	solStart.start = true;
 
 	cSolEnd = &solEnd;
 
