@@ -1024,6 +1024,33 @@ Solution Maze::solve(Location from, Location to) {
 		delete stash;
 	}
 
+//Fix strange edge case where the last node is invalid
+	Solution *cur = &solStart;
+	Solution *prev;
+
+	while(true) {
+	//This is an indication of the problem
+		if (cur->location.x < -1 || cur->location.z < -1  ||
+			(cur->end == true && cur->start == true)) {
+				prev->next = new Solution();
+				prev->next->end = true;
+				prev->next->location = this->end;
+				prev->next->next = new Solution();
+				prev->next->previous = prev;
+				prev->next->start = false;
+
+				break;
+		}
+
+	//This is an indication of the end
+		if (cur->end) {
+			break;
+		}
+
+		prev = cur;
+		cur = cur->next;
+	}
+
 	++solvedCounter;
 	return solStart;
 }
