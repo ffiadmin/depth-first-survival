@@ -35,6 +35,7 @@
 #include "LightObject.h"
 #include "Maze.h"
 #include "TrackingEnemies.h"
+#include "Monster.h"
 
 class ColoredCubeApp : public D3DApp
 {
@@ -97,6 +98,7 @@ private:
 	Quad quad1;
 	Line line, line2, line3;
 	Box mBox;
+	Monster mon;
 	Billboard testBoard;
 	Maze maze;
 	bool perspective;
@@ -425,6 +427,7 @@ void ColoredCubeApp::initApp()
 	camera.init(&maze);
 
 	mBox.init(md3dDevice, 1.0f);
+	mon.init(md3dDevice, 1.0f);
 
 	testBoard.init(md3dDevice,Vector3(0,0,0),Vector2(24,24));
 	billboard.init(&testBoard,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
@@ -453,7 +456,7 @@ void ColoredCubeApp::initApp()
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
 
-	testTracker.init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
