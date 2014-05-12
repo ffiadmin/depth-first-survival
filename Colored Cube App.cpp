@@ -1537,7 +1537,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	Location s;
 	s.x = 2;
 	s.z = 2;
-	testTracker.setPath(&maze,s,maze.getStartPosition());
+	//testTracker.setPath(&maze,s,maze.getStartPosition());
 	testTracker.setPosition(Vector3(maze.cellToPx(s).x,0,maze.cellToPx(s).z));
 
 	//put the goal box in the correct location
@@ -1548,25 +1548,28 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		endCube.setPosition(Vector3(end.x,0,end.z));
 		endLight.pos = D3DXVECTOR3(end.x,10,end.z);
 		Location temp;
-		temp.x = rand()%10;
-		temp.z = rand()%10;
+		temp.x = rand()%9;
+		temp.z = rand()%9;
 		dungeonMaster.setPath(&maze,temp,maze.getStartPosition());
+		dungeonMaster.setPosition(Vector3(maze.cellToPx(temp).x,0,maze.cellToPx(temp).z));
 	}
 
 	if(gamestate == level3)
 	{
 		Location trackerStart;
-		trackerStart.x = rand()%10;
-		trackerStart.z = rand()%10;
+		trackerStart.x = rand()%7;
+		trackerStart.z = rand()%7;
 		Location trackerEnd;
-		trackerEnd.x = rand()%10;
-		trackerEnd.z = rand()%10;
+		trackerEnd.x = rand()%9;
+		trackerEnd.z = rand()%9;
 		testTracker.setPath(&maze,trackerStart,trackerEnd);
-		trackerStart.x = rand()%10;
-		trackerStart.z = rand()%10;
-		trackerEnd.x = rand()%10;
-		trackerEnd.z = rand()%10;
+		testTracker.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
+		trackerStart.x = rand()%9;
+		trackerStart.z = rand()%9;
+		trackerEnd.x = rand()%9;
+		trackerEnd.z = rand()%9;
 		testTracker2.setPath(&maze,trackerStart,trackerEnd);
+		testTracker2.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
 	}
 
 	//reset the maze textures
