@@ -113,6 +113,7 @@ private:
 	Light ambientLighting;
 
 	TrackingEnemies testTracker;
+	TrackingEnemies testTracker2;
 	TrackingEnemies dungeonMaster;
 
 	EnemyHoard ghosts;
@@ -201,8 +202,12 @@ private:
 	float mPhi;
 	float sensitivity;
 
+	float hitTimer;
+
 	//Fog Switch
 	bool fog;
+
+	int guardsHit;
 
     float timer;
     std::wstring mTimer;
@@ -230,6 +235,8 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	{
 		totalLights[i] = 0;
 	}
+	hitTimer = 0;
+	guardsHit = 0;
 	maxTopDownTime = 10;
 	topDownTime = 0;
 	breadDebounced = false;
@@ -424,7 +431,8 @@ void ColoredCubeApp::initApp()
 	start = maze.cellToPx(start);
 	player.setPosition(Vector3(start.x,0,start.z));
 
-	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+	testTracker2.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 
 	dungeonMaster.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
 
@@ -535,7 +543,7 @@ void ColoredCubeApp::initApp()
 	//Initialize Projectiles
 	for(int i = 0; i < maxProjectile; i++)
 	{
-		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
+		projectile[i].init(&mBox,mfxWVPVar,mfxWorldVar,4*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(1,1,1));
 		projectile[i].setInActive();
 		projectile[i].setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 		projectile[i].setTex(projectileTexture,iceSpecMap);
@@ -609,7 +617,7 @@ void ColoredCubeApp::updateScene(float dt)
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
 	//Player collision detection
-	if(player.getPosition()!=oldP)
+	/*if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
 		{
@@ -617,7 +625,7 @@ void ColoredCubeApp::updateScene(float dt)
 			player.setVelocity(Vector3(0,0,0));
 			player.update(dt);
 		}
-	}
+	}*/
 	flashLightObject.update(dt);
 	
 	maze.update(dt);
@@ -738,7 +746,7 @@ void ColoredCubeApp::updateScene(float dt)
 
 	if(topDownTime <= 0)
 	{
-		perspective = false;
+		;//perspective = false;
 	}
 
 	//Update Lamp Lights
@@ -957,6 +965,12 @@ void ColoredCubeApp::drawScene()
 	D3D10_TECHNIQUE_DESC techDesc;
 	mTech->GetDesc(&techDesc);
 
+	if(gamestate == level3)
+	{
+		testTracker.draw(mView,mProj,mTechColor2);
+		testTracker2.draw(mView,mProj,mTechColor2);
+	}
+
 	//draw the maze
 	if(fog)
 		maze.draw(texTech,mView,mProj,mTechFogCeil);
@@ -1070,6 +1084,57 @@ void ColoredCubeApp::updateL3(float dt)
 	ambientLight = D3DXCOLOR(0.3f, 0.03f, 0.2f, 1.0f);
 	std::wostringstream outs; 
 	
+	testTracker.update(dt,&player,false,&maze);
+	testTracker2.update(dt,&player,false,&maze);
+
+	for(int i = 0; i<maxProjectile; i++)
+	{
+		if(testTracker.collided(&projectile[i]))
+		{
+			projectile[i].setInActive();
+			testTracker.setInActive();
+			guardsHit++;
+			audio->playCue(G_HIT);
+		}
+		if(testTracker2.collided(&projectile[i]))
+		{
+			projectile[i].setInActive();
+			testTracker2.setInActive();
+			guardsHit++;
+			audio->playCue(G_HIT);
+		}
+	}
+
+	if(guardsHit == 2)
+	{
+		goal = true;
+	}
+
+	if(testTracker.collided(&player))
+	{
+		hitTimer+=dt;
+		if(hitTimer>=1)
+		{
+			player.setHealth(player.getHealth()-dt);
+			audio->playCue(WILHELM);
+			hitTimer = 0;
+		}
+	}
+	else if(testTracker2.collided(&player))
+	{
+		hitTimer+=dt;
+		if(hitTimer>=1)
+		{
+			player.setHealth(player.getHealth()-dt);
+			audio->playCue(WILHELM);
+			hitTimer = 0;
+		}
+	}
+	else
+	{
+		hitTimer = 0;
+	}
+
 	outs.precision(2);
 	outs << L"Health: " << player.getHealth() << L"\n";
 	outs.precision(3);
@@ -1433,6 +1498,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		projectile[i].setInActive();
 	}
 
+	guardsHit = 0;
 	mazeX = x;
 	mazeZ = z;
 	currentKeys = 0;
@@ -1466,6 +1532,22 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		temp.x = rand()%10;
 		temp.z = rand()%10;
 		dungeonMaster.setPath(&maze,temp,maze.getStartPosition());
+	}
+
+	if(gamestate == level3)
+	{
+		Location trackerStart;
+		trackerStart.x = rand()%10;
+		trackerStart.z = rand()%10;
+		Location trackerEnd;
+		trackerEnd.x = rand()%10;
+		trackerEnd.z = rand()%10;
+		testTracker.setPath(&maze,trackerStart,trackerEnd);
+		trackerStart.x = rand()%10;
+		trackerStart.z = rand()%10;
+		trackerEnd.x = rand()%10;
+		trackerEnd.z = rand()%10;
+		testTracker2.setPath(&maze,trackerStart,trackerEnd);
 	}
 
 	//reset the maze textures

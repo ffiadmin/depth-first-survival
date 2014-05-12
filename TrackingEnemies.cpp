@@ -16,7 +16,7 @@ void TrackingEnemies::setPath(Maze* maze, Location startCell, Location endCell)
 
 Solution* TrackingEnemies::getEnd(Solution* path)
 {
-	if(path->next->location.x==-1 || path->next->location.z==-1)
+	if(path->end || path->next->location.x==-1 || path->next->location.z==-1)
 	{
 		return path;
 	}
@@ -52,7 +52,7 @@ void TrackingEnemies::update(float dt, GameObject* player, bool track, Maze* maz
 
 	if((getPosition().x <= next.x+2 && getPosition().x >= next.x-2) && (getPosition().z <= next.z+2 && getPosition().z >= next.z-2))
 	{
-		if(!track && ((!reverse && (current->next->location.x==-1||current->next->location.z==-1)) || (reverse && current->previous->start)))
+		if(!track && ((!reverse && (current->next->location.x==-1||current->next->location.z==-1||current->end)) || (reverse && current->previous->start)))
 		{
 			reverse = !reverse;
 		}
