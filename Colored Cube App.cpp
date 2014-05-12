@@ -185,6 +185,7 @@ private:
 	ID3D10ShaderResourceView* l1Splash;
 	ID3D10ShaderResourceView* l2Splash;
 	ID3D10ShaderResourceView* l3Splash;
+	ID3D10ShaderResourceView* l4Splash;
 	ID3D10ShaderResourceView* projectileTexture;
 
 	ID3D10ShaderResourceView* standardSpecMap;
@@ -349,6 +350,8 @@ void ColoredCubeApp::initApp()
 	//level 3 splash
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"l3Splash.jpg", 0, 0, &l3Splash, 0 ));
+	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
+		L"l4Splash.jpg", 0, 0, &l4Splash, 0 ));
 	//Projectile Texture
 	HR(D3DX10CreateShaderResourceViewFromFile(md3dDevice, 
 		L"projectile.jpg", 0, 0, &projectileTexture, 0 ));
@@ -715,29 +718,35 @@ void ColoredCubeApp::updateScene(float dt)
 	}
 
 	//Shoot projectile
-	if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
+	if(gamestate == level3)
 	{
-		shootProjectile(player.getPosition());
-		projectileDebounced = true;
-	}
-	if(!(GetAsyncKeyState('G') & 0x8000))
-	{
-		projectileDebounced = false;
+		if(!projectileDebounced && GetAsyncKeyState('G') & 0x8000)
+		{
+			shootProjectile(player.getPosition());
+			projectileDebounced = true;
+		}
+		if(!(GetAsyncKeyState('G') & 0x8000))
+		{
+			projectileDebounced = false;
+		}
 	}
 
 	//Change perspective
-	if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
+	if(gamestate == level1 || gamestate == level2 || gamestate == level3 || gamestate == level4)
 	{
-		perspective = !perspective;
-		perspectiveDebounced = true;
-		nextState = gamestate;
-		gamestate = viewSwitch;
-		//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
-	}
-	if(!(GetAsyncKeyState('R') & 0x8000))
-	{
-		perspectiveDebounced = false;
-		//ambientLighting.ambient = ambientLight;
+		if(!perspective && !perspectiveDebounced && GetAsyncKeyState('R') & 0x8000)
+		{
+			perspective = !perspective;
+			perspectiveDebounced = true;
+			nextState = gamestate;
+			gamestate = viewSwitch;
+			//ambientLighting.ambient = D3DXCOLOR(1,0.5,0.5,1);
+		}
+		if(!(GetAsyncKeyState('R') & 0x8000))
+		{
+			perspectiveDebounced = false;
+			//ambientLighting.ambient = ambientLight;
+		}
 	}
 
 	if(perspective)
@@ -765,9 +774,12 @@ void ColoredCubeApp::updateScene(float dt)
 			batteries[i].setInActive();
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
-			projectileNum--;
-			if(projectileNum < 0)
-				projectileNum = 0;
+			if(gamestate == level3)
+			{
+				projectileNum--;
+				if(projectileNum < 0)
+					projectileNum = 0;	
+			}
 		}
 	}
 
@@ -1141,6 +1153,8 @@ void ColoredCubeApp::updateL3(float dt)
 	outs.precision(3);
 	outs << "Battery: " << flashLightObject.getPowerLevel();
 	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	outs << "\nProjectiles: " << maxProjectile-projectileNum;
+	outs << "\nGuards Remaining: " << 2-guardsHit;
 	if(topDownTime == maxTopDownTime)
 		outs << "\nTop Down Available";
 	if(perspective)
@@ -1472,7 +1486,7 @@ void ColoredCubeApp::updateGameState()
 		   nextState = level4;
 		   lights[1] = ambientLighting;
 		   //change to level 4 splash screen
-		   splashScreen = l3Splash;
+		   splashScreen = l4Splash;
 			transitionState = splash;
 			sceneAlpha = 1.0f;
 			fog = false;
