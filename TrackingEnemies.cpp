@@ -52,19 +52,21 @@ void TrackingEnemies::update(float dt, GameObject* player, bool track, Maze* maz
 
 	if((getPosition().x <= next.x+2 && getPosition().x >= next.x-2) && (getPosition().z <= next.z+2 && getPosition().z >= next.z-2))
 	{
-		if((!reverse && current->next->end) || (reverse && current->start))
+		if(!track && ((!reverse && (current->next->location.x==-1||current->next->location.z==-1)) || (reverse && current->previous->start)))
 		{
 			reverse = !reverse;
 		}
 		if(!reverse)
 		{
-			current = current->next;
-			Location next = maze->cellToPx(current->location);
+			if(current->next)
+				current = current->next;
+			next = maze->cellToPx(current->location);
 		}
 		else
 		{
-			current = current->previous;
-			Location next = maze->cellToPx(current->location);
+			if(current->previous)
+				current = current->previous;
+			next = maze->cellToPx(current->location);
 		}
 	}
 
