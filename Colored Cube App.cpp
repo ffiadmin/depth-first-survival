@@ -1571,17 +1571,17 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	if(gamestate == level3)
 	{
 		Location trackerStart;
-		trackerStart.x = rand()%7;
-		trackerStart.z = rand()%7;
+		trackerStart.x = rand()%8;
+		trackerStart.z = rand()%8;
 		Location trackerEnd;
-		trackerEnd.x = rand()%9;
-		trackerEnd.z = rand()%9;
+		trackerEnd.x = rand()%8;
+		trackerEnd.z = rand()%8;
 		testTracker.setPath(&maze,trackerStart,trackerEnd);
 		testTracker.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
-		trackerStart.x = rand()%9;
-		trackerStart.z = rand()%9;
-		trackerEnd.x = rand()%9;
-		trackerEnd.z = rand()%9;
+		trackerStart.x = rand()%8;
+		trackerStart.z = rand()%8;
+		trackerEnd.x = rand()%8;
+		trackerEnd.z = rand()%8;
 		testTracker2.setPath(&maze,trackerStart,trackerEnd);
 		testTracker2.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
 	}
