@@ -87,7 +87,7 @@ void playerControls::resize(D3DXMATRIX &Proj, float FOV, float nearClip, float f
 	D3DXMatrixPerspectiveFovLH(&Proj, FOV, aspectRatio, nearClip, farClip);
 }
 
-void playerControls::update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective, bool power)
+void playerControls::update(float &theta, float &phi, float &radius, float headPos, float &dt, GameObject player, D3DXMATRIX &view, D3DXVECTOR3 &eyePos, bool perspective, bool power, float sensitivity)
 {
 	if(perspective)
 	{
@@ -115,10 +115,10 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 		// and mTheta measured counterclockwise from -z.
 		if(!power)
 		{
-			if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	mTheta += 10.0f*dt;
-			if(GetAsyncKeyState(VK_LEFT) & 0x8000)	mTheta -= 10.0f*dt;
-			if(GetAsyncKeyState(VK_UP) & 0x8000)	mPhi -= 10.0f*dt;
-			if(GetAsyncKeyState(VK_DOWN) & 0x8000)	mPhi += 10.0f*dt;
+			if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	mTheta += sensitivity*dt;
+			if(GetAsyncKeyState(VK_LEFT) & 0x8000)	mTheta -= sensitivity*dt;
+			if(GetAsyncKeyState(VK_UP) & 0x8000)	mPhi -= sensitivity*dt;
+			if(GetAsyncKeyState(VK_DOWN) & 0x8000)	mPhi += sensitivity*dt;
 			//if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
 			//if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;
 			eyePos.x =  mRadius*sinf(mPhi)*sinf(mTheta) + maze->getDimension().x/2.0f;
@@ -151,10 +151,10 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 	else
 	{
 		maze->setCeilingVisibility(true);
-		if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	theta -= 2.0f*dt;
-		if(GetAsyncKeyState(VK_LEFT) & 0x8000)	theta += 2.0f*dt;
-		if(GetAsyncKeyState(VK_UP) & 0x8000)	phi -= 2.0f*dt;
-		if(GetAsyncKeyState(VK_DOWN) & 0x8000)	phi += 2.0f*dt;
+		if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	theta -= sensitivity*dt;
+		if(GetAsyncKeyState(VK_LEFT) & 0x8000)	theta += sensitivity*dt;
+		if(GetAsyncKeyState(VK_UP) & 0x8000)	phi -= sensitivity*dt;
+		if(GetAsyncKeyState(VK_DOWN) & 0x8000)	phi += sensitivity*dt;
 		//Don't need for First Person
 		//if(GetAsyncKeyState('O') & 0x8000)	radius -= 25.0f*dt;
 		//if(GetAsyncKeyState('P') & 0x8000)	radius += 25.0f*dt;

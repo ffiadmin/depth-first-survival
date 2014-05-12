@@ -207,6 +207,7 @@ private:
 	float mRadius;
 	float mTheta;
 	float mPhi;
+	float sensitivity;
 
 	bool fog;
 
@@ -286,6 +287,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	sceneAlpha = 1.0f;
 	timeBetweenTopDown = 20;
 	fog = false;
+	sensitivity = 2.0f;
 }
 
 ColoredCubeApp::~ColoredCubeApp()
@@ -625,7 +627,7 @@ void ColoredCubeApp::updateScene(float dt)
 	//timer -= dt;
 
 	//update the camera
-	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true);
+	camera.update(mTheta,mPhi,mRadius,0,dt,player,mView,mEyePos,perspective,true,sensitivity);
 	//move the player
 	camera.movePlayer(player,30,camera.getTarget(),perspective);
 	player.update(dt);
@@ -696,6 +698,27 @@ void ColoredCubeApp::updateScene(float dt)
 		flashLightObject.lightSource.dir = camera.getTarget();
 	}
 
+	if(GetAsyncKeyState('1') & 0x8000)
+	{
+		sensitivity = 0.5f;
+	}
+	if(GetAsyncKeyState('2') & 0x8000)
+	{
+		sensitivity = 1.0f;
+	}
+	if(GetAsyncKeyState('3') & 0x8000)
+	{
+		sensitivity = 2.0f;
+	}
+	if(GetAsyncKeyState('4') & 0x8000)
+	{
+		sensitivity = 2.5f;
+	}
+	if(GetAsyncKeyState('5') & 0x8000)
+	{
+		sensitivity = 3.0f;
+	}
+
 	if(!breadDebounced && GetAsyncKeyState('C') & 0x8000)
 	{
 		dropBread(player.getPosition());
@@ -752,6 +775,8 @@ void ColoredCubeApp::updateScene(float dt)
 			flashLightObject.getBattery();
 			audio->playCue(BATTERY_CHARGE);
 			projectileNum--;
+			if(projectileNum < 0)
+				projectileNum = 0;
 		}
 	}
 
@@ -1168,7 +1193,7 @@ void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* scree
 		sceneAlpha+=dt;
 	}
 	float rad = 0.0f;
-	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false);
+	camera.update(mTheta,mPhi,rad,0,dt,player,mView,mEyePos,true,false,sensitivity);
 	//set ceiling texture here
 	maze.setCeilTex(screen,brickSpecMap);
 	maze.update(dt);
