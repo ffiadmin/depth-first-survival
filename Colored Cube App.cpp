@@ -618,7 +618,7 @@ void ColoredCubeApp::updateScene(float dt)
 	playerLoc.x = player.getPosition().x;
 	playerLoc.z = player.getPosition().z;
 	//Player collision detection
-	/*if(player.getPosition()!=oldP)
+	if(player.getPosition()!=oldP)
 	{
 		if(maze.collided(playerLoc))
 		{
@@ -626,7 +626,7 @@ void ColoredCubeApp::updateScene(float dt)
 			player.setVelocity(Vector3(0,0,0));
 			player.update(dt);
 		}
-	}*/
+	}
 	flashLightObject.update(dt);
 	
 	maze.update(dt);
@@ -747,7 +747,7 @@ void ColoredCubeApp::updateScene(float dt)
 
 	if(topDownTime <= 0)
 	{
-		;//perspective = false;
+		perspective = false;
 	}
 
 	//Update Lamp Lights
