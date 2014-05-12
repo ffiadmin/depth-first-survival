@@ -113,6 +113,7 @@ private:
 	Light ambientLighting;
 
 	TrackingEnemies testTracker;
+	TrackingEnemies dungeonMaster;
 
 	EnemyHoard ghosts;
 	FlashLightObject flashLightObject;
@@ -424,6 +425,8 @@ void ColoredCubeApp::initApp()
 	player.setPosition(Vector3(start.x,0,start.z));
 
 	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
+
+	dungeonMaster.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
 
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
@@ -814,7 +817,7 @@ void ColoredCubeApp::updateScene(float dt)
 		break;
 	case level4:
 		updateLights();
-		updateL3(dt);
+		updateL4(dt);
 		break;
 	case gameover:
 		updateSplashScreen(dt,loseScreenTexture);
@@ -970,13 +973,19 @@ void ColoredCubeApp::drawScene()
 	}
 
 	//draw the end cube
-	if(gamestate == level3)
+	if(gamestate == level4)
+	{
 		endCube.draw(mView,mProj,texTech);
+		dungeonMaster.draw(mView,mProj,mTechColor2);
+	}
 
 	//draw the origin
 	//origin.draw(mView, mProj, mTech);
 	
-	testTracker.draw(mView,mProj,mTechColor2);
+	if(gamestate == level3)
+	{
+		testTracker.draw(mView,mProj,mTechColor2);
+	}
 
 	//draw "crumbs" placed by player
 	for(int i = 0; i < maxBread; i++)
@@ -1012,7 +1021,7 @@ void ColoredCubeApp::drawScene()
 
 	billboard.draw(mView,mProj,mTechBillboard);
 
-	if(gamestate == level2 || gamestate == level3)
+	if(gamestate == level2 || gamestate == level3 || gamestate == level4)
 	{
 		ghosts.draw(mView,mProj,texTech);
 	}
@@ -1041,7 +1050,7 @@ void ColoredCubeApp::updateL1(float dt)
 		outs << "\nTop Down Remaining: " << topDownTime;
 	mTimer = outs.str();
 
-	testTracker.update(dt,&player,true,&maze);
+	//testTracker.update(dt,&player,true,&maze);
 
 	for(int i = 0; i < totalKeys; i++)
 	{
@@ -1171,7 +1180,53 @@ void ColoredCubeApp::updateL2(float dt)
 
 void ColoredCubeApp::updateL4(float dt)
 {
+	std::wostringstream outs;
+	outs.precision(2);
+	outs << L"Health: " << player.getHealth() << L"\n";
+	outs.precision(3);
+	outs << "Battery: " << flashLightObject.getPowerLevel();
+	outs << "\nBreadcrumbs: " << maxBread-breadNumber;
+	if(topDownTime == maxTopDownTime)
+		outs << "\nTop Down Available";
+	if(perspective)
+		outs << "\nTop Down Remaining: " << topDownTime;
+	mTimer = outs.str();
+	mTimer = outs.str();
 
+	dungeonMaster.update(dt,&player,true,&maze);
+
+	ghosts.update(dt,&player,camera.getTarget(),perspective);
+	//ghost collision detection
+	
+	for(int i = 0; i < ghosts.getNumEnemies(); i++)
+	{
+		//player gets hit by a ghost
+		if(player.collided(&ghosts.getEnemies()[i]))
+		{
+			player.setHealth(player.getHealth()-1);
+			lights[1].ambient = hurtLight;
+			//make flash take longer
+			ghosts.getEnemies()[i].setInActive();
+			ghosts.getEnemies()[i].getLight()->pos = Vector3(100,100,100);
+			audio->playCue(P_HIT);
+		}
+	}
+	//flashlight ghost attack
+	if(flashLightObject.getOn())
+	{
+		for(int i = 0; i < ghosts.getNumEnemies(); i++)
+		{
+			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
+			{
+				ghosts.getEnemies()[i].setHit(true);
+				audio->playCue(G_HIT);
+			}
+			else
+			{
+				ghosts.getEnemies()[i].setHit(false);
+			}
+		}
+	}
 }
 
 void ColoredCubeApp::updateSplashScreen(float dt,ID3D10ShaderResourceView* screen)
@@ -1326,18 +1381,22 @@ void ColoredCubeApp::updateGameState()
 			sceneAlpha = 1.0f;
 			fog = false;
        }
-	   if(gamestate == level3 && goal)
+	   if(gamestate == level3 && goal||(GetAsyncKeyState('N') & 0x8000))
 	   {
 		   goal = false;
 		   gamestate = transition;
+		   nextState = level4;
 		   lights[1] = ambientLighting;
-			transitionState = win;
+		   //change to level 4 splash screen
+		   splashScreen = l3Splash;
+			transitionState = splash;
 			sceneAlpha = 1.0f;
 			fog = false;
 	   }
 	   if(gamestate == level4 && goal)
 	   {
-		   gamestate = win;//WOOHOO!!!
+		   gamestate = transition;//WOOHOO!!!
+		   transitionState = win;
 	   }
 	   if(gamestate == splash && (GetAsyncKeyState(VK_SPACE) & 0x8000))
 	   {
@@ -1399,20 +1458,15 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	//put the goal box in the correct location
 	Location end = maze.getEndPosition();
 	end = maze.cellToPx(end);
-	endCube.setPosition(Vector3(end.x,0,end.z));
-
-	//set up the end light
-	endLight.ambient  = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	endLight.diffuse  = D3DXCOLOR(1.0f, 1.0f, 0.3f, 1.0f);
-	endLight.specular = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-	endLight.att.x    = 1.0f;
-	endLight.att.y    = 0.0f;
-	endLight.att.z    = 0.0f;
-	endLight.spotPow  = 10;
-	endLight.range    = 100;
-	endLight.pos = D3DXVECTOR3(end.x,10,end.z);
-	endLight.dir = D3DXVECTOR3(0, -1, 0);	
-	endLight.lightType.x = 2;
+	if(gamestate == level4)
+	{
+		endCube.setPosition(Vector3(end.x,0,end.z));
+		endLight.pos = D3DXVECTOR3(end.x,10,end.z);
+		Location temp;
+		temp.x = rand()%10;
+		temp.z = rand()%10;
+		dungeonMaster.setPath(&maze,temp,maze.getStartPosition());
+	}
 
 	//reset the maze textures
 	maze.setTex(brickTexture,brickSpecMap);	
@@ -1429,7 +1483,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		auto spot = maze.cellToPx(l);
 		lamps[i].setPosition(Vector3(spot.x,5,spot.z));
 	}
-	if(keys)
+	if(gamestate == level1 && keys)
 	{
 		for(int i = 0; i < totalKeys; i++)
 		{
