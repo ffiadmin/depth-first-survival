@@ -12,10 +12,12 @@ Camera and movement controls
 #include "d3dUtil.h"
 #include "constants.h"
 #include "Maze.h"
+#include "input.h"
 
 //Include the class for the player here
 //Change class of player variable accordingly
 #include "GameObject.h"
+#define ZERO_2VEC D3DXVECTOR2(0, 0)
 
 class playerControls
 {
@@ -30,7 +32,7 @@ public:
 	void moveObject(GameObject &player, float playerSpeed, Vector3 dir, bool perspective);
 	Vector3 movementFP(Vector3 dir, bool perspective);
 
-	void init(Maze *m);
+	void init(Maze *m, Input *i);
 	//Call this in onResize
 	void resize(D3DXMATRIX &mProj, float FOV, float nearClip, float farClip);
 	//Call this in initApp
@@ -40,6 +42,10 @@ public:
 	Vector3 getTarget() {return target;}
 
 private : 
+	D3DXVECTOR2 center;
+	D3DXVECTOR2 cur;
+	D3DXVECTOR2 prev;
+	Input *input;
 	int windowHeight;
 	int windowWidth;
 	Vector3 target;

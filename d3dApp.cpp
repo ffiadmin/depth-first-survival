@@ -108,6 +108,9 @@ void D3DApp::initApp()
 	initMainWindow();
 	initDirect3D();
 
+	input = new Input();
+	input->initialize(mhMainWnd, false); 
+
 	D3DX10_FONT_DESC fontDesc;
 	fontDesc.Height          = 24;
     fontDesc.Width           = 0;
@@ -323,6 +326,54 @@ LRESULT D3DApp::msgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 200;
 		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 200; 
 		return 0;
+
+	case WM_KEYDOWN: case WM_SYSKEYDOWN:    // key down
+        input->keyDown(wParam);
+        return 0;
+    case WM_KEYUP: case WM_SYSKEYUP:        // key up
+        input->keyUp(wParam);
+        return 0;
+    case WM_CHAR:                           // character entered
+        input->keyIn(wParam);
+		if (wParam == VK_ESCAPE) PostQuitMessage(0);
+        return 0;
+    case WM_MOUSEMOVE:                      // mouse moved
+        input->mouseIn(lParam);
+        return 0;
+    case WM_INPUT:                          // raw mouse data in
+        input->mouseRawIn(lParam);
+        return 0;
+    case WM_LBUTTONDOWN:                    // left mouse button down
+        input->setMouseLButton(true);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_LBUTTONUP:                      // left mouse button up
+        input->setMouseLButton(false);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_MBUTTONDOWN:                    // middle mouse button down
+        input->setMouseMButton(true);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_MBUTTONUP:                      // middle mouse button up
+        input->setMouseMButton(false);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_RBUTTONDOWN:                    // right mouse button down
+        input->setMouseRButton(true);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_RBUTTONUP:                      // right mouse button up
+        input->setMouseRButton(false);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_XBUTTONDOWN: case WM_XBUTTONUP: // mouse X button down/up
+        input->setMouseXButton(wParam);
+        input->mouseIn(lParam);             // mouse position
+        return 0;
+    case WM_DEVICECHANGE:                   // check for controller insert
+ //       input->checkControllers();
+        return 0;
 	}
 
 	return DefWindowProc(mhMainWnd, msg, wParam, lParam);
@@ -352,11 +403,14 @@ void D3DApp::initMainWindow()
 	// Compute window rectangle dimensions based on requested client area dimensions.
 	RECT R = { 0, 0, mClientWidth, mClientHeight };
     AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, false);
-	int width  = R.right - R.left;
-	int height = R.bottom - R.top;
+	//int width  = R.right - R.left;
+	//int height = R.bottom - R.top;
+	int width = GetSystemMetrics(SM_CXSCREEN);
+	int height = GetSystemMetrics(SM_CYSCREEN);
+	DWORD style = WS_EX_TOPMOST | WS_VISIBLE | WS_POPUP; // WS_OVERLAPPEDWINDOW for regular window
 
 	mhMainWnd = CreateWindow(L"D3DWndClassName", mMainWndCaption.c_str(), 
-		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, this); 
+		style, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, this); 
 	if( !mhMainWnd )
 	{
 		MessageBox(0, L"CreateWindow FAILED", 0, 0);

@@ -15,9 +15,18 @@ playerControls::~playerControls(void)
 {
 }
 
-void playerControls::init(Maze *m)
+void playerControls::init(Maze *m, Input *i)
 {
 	maze = m;
+	input = i;
+
+	int width = GetSystemMetrics(SM_CXSCREEN);
+	int height = GetSystemMetrics(SM_CYSCREEN);
+	center.x = width / 2;
+	center.y = height / 2;
+	prev = center;
+
+	ShowCursor(FALSE);
 }
 
 void playerControls::movePlayer(GameObject &player, float playerSpeed, Vector3 dir, bool perspective)
@@ -151,6 +160,38 @@ void playerControls::update(float &theta, float &phi, float &radius, float headP
 	else
 	{
 		maze->setCeilingVisibility(true);
+
+		cur.x = input->getMouseX();
+		cur.y = input->getMouseY();
+
+		/*if (cur - prev != ZERO_2VEC) {
+			D3DXVECTOR2 dir(0, 0);
+
+			dir.x = prev.x - cur.x;
+			dir.y = prev.y - cur.y;
+
+		//Move left
+			if (prev.x > cur.x) theta += sensitivity * dt;
+
+		//Move right
+			if (prev.x < cur.x) theta -= sensitivity * dt;
+			
+		//Move up
+			if (prev.y < cur.y) phi += sensitivity * dt;
+
+		//Move down
+			if (prev.y > cur.y) phi -= sensitivity * dt;
+
+		//Normalize the direction
+			D3DXVec2Normalize(&dir, &dir);
+
+			theta += dir.x;
+			phi += dir.y;
+
+		//Reset mouse position for bounded mouse movement
+			SetCursorPos(center.x, center.y);
+		}*/
+
 		if(GetAsyncKeyState(VK_RIGHT) & 0x8000)	theta -= sensitivity*dt;
 		if(GetAsyncKeyState(VK_LEFT) & 0x8000)	theta += sensitivity*dt;
 		if(GetAsyncKeyState(VK_UP) & 0x8000)	phi -= sensitivity*dt;

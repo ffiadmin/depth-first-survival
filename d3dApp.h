@@ -14,7 +14,7 @@
 #include "d3dUtil.h"
 #include "GameTimer.h"
 #include <string>
-
+#include "input.h"
 
 class D3DApp
 {
@@ -41,7 +41,7 @@ protected:
 	void initDirect3D();
 	
 protected:
-
+	Input     *input;
 	HINSTANCE mhAppInst;
 	HWND      mhMainWnd;
 	bool      mAppPaused;

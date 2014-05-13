@@ -1025,8 +1025,48 @@ Solution Maze::solve(Location from, Location to) {
 	}
 
 //Fix strange edge case where the last node is invalid
-	//Solution *cur = &solStart;
-	//Solution *prev;
+	bool boomGotcha = false;
+	Location boomTo;
+	Solution *cur = &solStart;
+	Node *endSauce = grid[to.x][to.z];
+
+	while(true) {
+		if (endSauce->children.east != NULL && endSauce->children.east->location == cur->location) {
+			boomGotcha = true;
+			boomTo = endSauce->location;
+		}
+
+		if (endSauce->children.north != NULL && endSauce->children.north->location == cur->location) {
+			boomGotcha = true;
+			boomTo = endSauce->location;
+		}
+
+		if (endSauce->children.south != NULL && endSauce->children.south->location == cur->location) {
+			boomGotcha = true;
+			boomTo = endSauce->location;
+		}
+
+		if (endSauce->children.west != NULL && endSauce->children.west->location == cur->location) {
+			boomGotcha = true;
+			boomTo = endSauce->location;
+		}
+
+		if (boomGotcha) {
+			cur->next = new Solution();
+			cur->next->end = true;
+			cur->next->location = boomTo;
+			cur->next->next = new Solution();
+			cur->next->previous = cur;
+			cur->next->start = false;
+
+			cur->end = false;
+			cur->start = false;
+
+			break;
+		}
+
+		cur = cur->next;
+	}
 
 	//while(true) {
 	////This is an indication of the problem

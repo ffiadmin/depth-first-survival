@@ -8,6 +8,7 @@ TrackingEnemies::TrackingEnemies()
 
 void TrackingEnemies::setPath(Maze* maze, Location startCell, Location endCell)
 {
+	crap = endCell;
 	path = maze->solve(startCell,endCell);
 	forward = &path;
 	current = forward;

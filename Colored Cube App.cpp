@@ -220,9 +220,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 				   PSTR cmdLine, int showCmd)
 {
 	// Enable run-time memory check for debug builds.
-#if defined(DEBUG) | defined(_DEBUG)
-	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-#endif
+//#if defined(DEBUG) | defined(_DEBUG)
+//	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+//#endif
 
 	ColoredCubeApp theApp(hInstance);
 	theApp.initApp();
@@ -403,7 +403,7 @@ void ColoredCubeApp::initApp()
 	maze.setTexLocVariable(mfxDiffuseMapVar,mfxSpecMapVar);
 	maze.setCeilTex(ceilingTexture,brickSpecMap);
 	maze.setFloorTex(floorTexture,brickSpecMap);
-	camera.init(&maze);
+	camera.init(&maze, input);
 
 	mBox.init(md3dDevice, 1.0f);
 	mon.init(md3dDevice, 1.0f);

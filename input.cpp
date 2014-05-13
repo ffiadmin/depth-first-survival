@@ -74,7 +74,7 @@ void Input::initialize(HWND hwnd, bool capture)
         // Clear controllers state
         ZeroMemory( controllers, sizeof(ControllerState) * MAX_CONTROLLERS );
 
-        checkControllers();             // check for connected controllers
+        //checkControllers();             // check for connected controllers
     }
     catch(...)
     {
@@ -254,7 +254,7 @@ void Input::mouseWheelIn(WPARAM wParam)
 //=============================================================================
 // Check for connected controllers
 //=============================================================================
-void Input::checkControllers()
+/*void Input::checkControllers()
 {
     DWORD result;
     for( DWORD i = 0; i <MAX_CONTROLLERS; i++)
@@ -265,12 +265,12 @@ void Input::checkControllers()
         else
             controllers[i].connected = false;
     }
-}
+}*/
 
 //=============================================================================
 // Read state of connected controllers
 //=============================================================================
-void Input::readControllers()
+/*void Input::readControllers()
 {
     DWORD result;
     for( DWORD i = 0; i <MAX_CONTROLLERS; i++)
@@ -282,7 +282,7 @@ void Input::readControllers()
                 controllers[i].connected = false;
         }
     }
-}
+}*/
 
 //=============================================================================
 // Return value of controller n Left Trigger (0 through 255).
@@ -405,7 +405,7 @@ SHORT Input::getGamepadThumbRY(UINT n)
 //=============================================================================
 // Vibrate connected controllers
 //=============================================================================
-void Input::vibrateControllers(float frameTime)
+/*void Input::vibrateControllers(float frameTime)
 {
     for(int i=0; i < MAX_CONTROLLERS; i++)
     {
@@ -426,5 +426,4 @@ void Input::vibrateControllers(float frameTime)
             XInputSetState(i, &controllers[i].vibration);
         }
     }
-}
-
+}*/

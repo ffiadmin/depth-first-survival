@@ -221,10 +221,10 @@ public:
     bool getMouseX2Button() const { return mouseX2Button; }
 
     // Update connection status of game controllers.
-    void checkControllers();
+    //void checkControllers();
 
     // Save input from connected game controllers.
-    void readControllers();
+    //void readControllers();
 
     // Set thumbstick deadzone
     void setThumbstickDeadzone(short dz) { thumbstickDeadzone = abs(dz); }
@@ -483,8 +483,7 @@ public:
     }
 
     // Vibrates the connected controllers for the desired time.
-    void vibrateControllers(float frameTime);
+    //void vibrateControllers(float frameTime);
 };
 
 #endif
-

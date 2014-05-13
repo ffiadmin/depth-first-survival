@@ -12,6 +12,7 @@ public:
 	void update(float dt, GameObject* player, bool track, Maze* maze);
 	Solution* getEnd(Solution* path);
 private:
+	Location crap;
 	Solution path;
 	Solution path2;
 	bool reverse;
