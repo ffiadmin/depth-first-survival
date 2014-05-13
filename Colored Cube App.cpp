@@ -247,7 +247,7 @@ ColoredCubeApp::ColoredCubeApp(HINSTANCE hInstance)
 	splashScreenDebounced = false;
 	goal = false;
 	currentKeys = 0;
-	totalKeys = 10;
+	totalKeys = 5;
 	numLightObjects = 7;
 	numBatteries = 10;
 	player.setHealth(10);
@@ -438,7 +438,7 @@ void ColoredCubeApp::initApp()
 	testTracker.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 	testTracker2.init(&mon,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),player.getPosition(),Vector3(0,0,0),10,Vector3(1,1,1));
 
-	dungeonMaster.init(&pokey,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),25,Vector3(1,1,1));
+	dungeonMaster.init(&pokey,mfxWVPVar,mfxWorldVar,2*sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),20,Vector3(1,1,1));
 
 	billboard.setPosition(Vector3(start.x,0,start.z));
 
@@ -465,7 +465,7 @@ void ColoredCubeApp::initApp()
 	key.init(md3dDevice,1,"item1.txt");
 	for(int i = 0; i < totalKeys; i++)
 	{
-		keyObject[i].init(&key,mfxWVPVar,mfxWorldVar,sqrt(2.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
+		keyObject[i].init(&key,mfxWVPVar,mfxWorldVar,sqrt(3.0f),Vector3(0,0,0),Vector3(0,0,0),0,Vector3(0.25,0.25,0.25));
 		Location l;
 		l.x = rand()%mazeX;
 		l.z = rand()%mazeZ;
@@ -1537,7 +1537,7 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 	//reset breadcrumbs
 	breadNumber = 0;
 	//Reset projectiles
-	projectileNum = 10;
+	projectileNum = 9;
 	for(int i = 0; i < maxBread; i++)
 	{
 		breadCrumbs[i].setInActive();
