@@ -1605,6 +1605,8 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 		testTracker2.setPosition(Vector3(maze.cellToPx(trackerStart).x,0,maze.cellToPx(trackerStart).z));
 	}
 
+	flashLightObject.turnOn();
+
 	//reset the maze textures
 	maze.setTex(brickTexture,brickSpecMap);	
 	maze.setTexLocVariable(mfxDiffuseMapVar, mfxSpecMapVar);

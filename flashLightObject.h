@@ -16,6 +16,7 @@ public:
 	void update(float dt);
 	void setRotation(Vector3 r);
 	void getBattery();
+	void turnOn() {on = true;}
 	int getPowerLevel() { return powerLevel;}
 	bool getOn() {return on;}
 	Light getLight() {return lightSource;}
