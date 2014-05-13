@@ -1636,13 +1636,13 @@ void ColoredCubeApp::reloadLevel(int x, int z, bool keys)
 			keyObject[i].setActive();
 		}
 	}
-	else
-	{
-		for(int i = 0; i < totalKeys; i++)
-		{
-			keyLights[i]->pos = Vector3(0,1000,0);
-		}
-	}
+	//if(!keys)
+	//{
+	//	for(int i = 0; i < totalKeys; i++)
+	//	{
+	//		keyLights[i]->pos = Vector3(0,1000,0);
+	//	}
+	//}
 	for(int i = 0; i < numBatteries; i++)
 	{
 		Location l;
