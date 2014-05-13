@@ -1284,6 +1284,25 @@ void ColoredCubeApp::updateL4(float dt)
 		audio->playCue(WILHELM);
 	}
 
+	for(int i = 0; i<maxProjectile; i++)
+	{
+		if(dungeonMaster.collided(&projectile[i]))
+		{
+			projectile[i].setInActive();
+			Location masterStart;
+			masterStart.x = rand()%5;
+			masterStart.z = rand()%5;
+			Location temp = maze.cellToPx(masterStart);
+			dungeonMaster.setPosition(Vector3(temp.x,0,temp.z));
+			Location pp;
+			pp.x = player.getPosition().x;
+			pp.z = player.getPosition().z;
+			pp = maze.pxToCell(pp);
+			dungeonMaster.setPath(&maze,maze.pxToCell(masterStart),pp);
+			audio->playCue(G_HIT);
+		}
+	}
+
 	ghosts.update(dt,&player,camera.getTarget(),perspective);
 	//ghost collision detection
 	
