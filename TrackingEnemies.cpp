@@ -9,6 +9,14 @@ TrackingEnemies::TrackingEnemies()
 void TrackingEnemies::setPath(Maze* maze, Location startCell, Location endCell)
 {
 	crap = endCell;
+	if(startCell.x<0) startCell.x=0;
+	if(startCell.z<0) startCell.z=0;
+	if(endCell.x<0) startCell.x = 0;
+	if(endCell.x<0) endCell.x = 0;
+	if(startCell.x>9) startCell.x=9;
+	if(startCell.z>9) startCell.x=9;
+	if(endCell.x>9) endCell.x=9;
+	if(endCell.z>9) endCell.z = 9;
 	path = maze->solve(startCell,endCell);
 	forward = &path;
 	current = forward;

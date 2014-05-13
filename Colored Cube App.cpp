@@ -1332,6 +1332,7 @@ void ColoredCubeApp::updateL4(float dt)
 			if(flashLightObject.hitTarget(&ghosts.getEnemies()[i]))
 			{
 				ghosts.getEnemies()[i].setHit(true);
+				ghosts.getEnemies()[i].decreaseHealth();
 				audio->playCue(G_HIT);
 			}
 			else
